@@ -1,0 +1,6 @@
+<svg width="240" height="94" viewBox="0 0 240 94" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ST1 Internet">
+  <rect width="240" height="94" rx="24" fill="#2B2FC2"/>
+  <text x="29" y="54" fill="white" font-family="Inter, Arial, sans-serif" font-size="50" font-weight="900" letter-spacing="-5">st1</text>
+  <text x="42" y="76" fill="white" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" letter-spacing="8">INTERNET</text>
+  <path d="M181 15l4.2 9.8L195 29l-9.8 4.2L181 43l-4.2-9.8L167 29l9.8-4.2L181 15z" fill="#FF7A00"/>
+</svg>

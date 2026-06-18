@@ -1,0 +1,24 @@
+{
+  "name": "st1-growthpack-command-center",
+  "version": "1.0.0",
+  "description": "Dashboard V4 ON para GrowthPack ST1 Internet com abas Geral, Mídia, CRM Comercial e Meta & FCA.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "preview": "vite preview --host 0.0.0.0",
+    "serve": "vite --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "vite": "latest"
+  },
+  "keywords": [
+    "st1",
+    "growthpack",
+    "dashboard",
+    "v4-on",
+    "crm",
+    "fca"
+  ],
+  "author": "V4 GrowthOps",
+  "license": "UNLICENSED"
+}
