@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/styles.css?v=20260618-004" />
 </head>
 <body>
   <div id="scrollProgress"></div>
@@ -227,8 +227,17 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="./config/dashboard.config.js"></script>
-  <script src="./assets/js/data-cache.js"></script>
-  <script src="./assets/js/app.js"></script>
+  <script src="./config/dashboard.config.js?v=20260618-004"></script>
+  <script src="./assets/js/data-cache.js?v=20260618-004"></script>
+  <script src="./assets/js/app.js?v=20260618-004"></script>
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!window.ST1Dashboard) {
+          document.body.insertAdjacentHTML('afterbegin', '<div style="position:fixed;z-index:99999;left:12px;right:12px;top:12px;padding:16px;border-radius:16px;background:#ff426d;color:white;font-family:Inter,Arial,sans-serif;font-weight:900;box-shadow:0 20px 80px rgba(0,0,0,.45)">Falha ao inicializar o dashboard: o app.js não criou window.ST1Dashboard. Abra o console para ver o erro do JavaScript.</div>');
+        }
+      }, 1200);
+    });
+  </script>
 </body>
 </html>
