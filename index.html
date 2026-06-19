@@ -1,1 +1,296 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ST1 Internet | BI V4 ON</title><link rel="stylesheet" href="assets/css/bi.css?v=bi-006"></head><body><div class="app"><header class="topbar"><div class="brand"><div class="logo">st1<small>INTERNET</small></div><div><strong>BI Command Center</strong><span>Modo V4 ON | GrowthPack</span></div></div><nav class="tabs" id="tabs"><button class="tab active" data-tab="overview">Visão CEO</button><button class="tab" data-tab="commercial">Comercial</button><button class="tab" data-tab="media">Mídia & Origem</button><button class="tab" data-tab="losses">Perdas</button><button class="tab" data-tab="projection">Metas & Projeção</button><button class="tab" data-tab="fca">Tasks & FCA</button><button class="tab" data-tab="status">Status</button></nav><div class="actions"><button class="btn" id="syncBtn">Sincronizar</button><button class="btn" id="sourceBtn">Fonte</button><button class="btn primary" onclick="window.print()">PDF</button></div></header><section class="hero glass"><div><div class="eyebrow"><span class="dot"></span>ST1 Internet | War Room V4 ON</div><h1>BI de comando <span>comercial</span></h1><p>Filtro real por data, vendedor, origem, etapa, motivo e busca. O painel recalcula toda a operação.</p><div class="statusline" id="statusLine"></div></div><div class="livebox"><strong id="liveClock">--:--:--</strong><small>tempo real visual</small><span id="sourceLabel">carregando GrowthPack</span></div></section><section class="filters glass"><div class="filter-head"><div><strong>Filtros globais</strong><span>Selecione e clique em aplicar</span></div><div class="filter-actions"><button class="btn primary" id="applyFilters">Aplicar filtros</button><button class="btn" id="clearFilters">Limpar filtros</button></div></div><div class="filter-grid"><label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label><label>Data final<input type="date" id="fEnd" value="2026-06-18"></label><label>Vendedora<select id="fSeller"></select></label><label>Origem<select id="fOrigin"></select></label><label>Etapa<select id="fStage"><option value="all">Todas</option><option value="leadTag">Tag LEAD</option><option value="mql">MQL</option><option value="sql">SQL</option><option value="opportunity">Oportunidade</option><option value="purchase">Compra</option><option value="lost">Com motivo de perda</option></select></label><label>Motivo<select id="fReason"></select></label><label>Categoria<select id="fCategory"></select></label><label>Busca<input id="fSearch" placeholder="Lead, vendedor, origem, motivo"></label></div></section><main><section class="panel active" id="overview"><div class="section-head"><h2>Visão CEO</h2><p>Resumo executivo da operação.</p></div><div class="kpi-grid" id="globalKpis"></div><div class="grid-2"><article class="card glass"><h3>Funil V4 ON</h3><div id="funnelChart"></div></article><article class="card glass"><h3>Leads x compras por dia</h3><div id="dailyBars"></div></article></div><div class="grid-3" id="executiveInsights"></div><article class="card glass"><h3>Base filtrada</h3><div class="table-wrap" id="filteredTable"></div></article></section><section class="panel" id="commercial"><div class="section-head"><h2>Comercial</h2><p>Vendedoras, etapas e gargalos.</p></div><div class="kpi-grid" id="commercialKpis"></div><div class="seller-grid" id="sellerCards"></div><div class="grid-2"><article class="card glass"><h3>Funil por vendedora</h3><div class="table-wrap" id="sellerFunnel"></div></article><article class="card glass"><h3>Perda de etapa</h3><div class="table-wrap" id="stageLoss"></div></article></div></section><section class="panel" id="media"><div class="section-head"><h2>Mídia & Origem</h2><p>Origem, atribuição e qualidade.</p></div><div class="kpi-grid" id="mediaKpis"></div><div class="grid-2"><article class="card glass"><h3>Origem por volume</h3><div id="originBars"></div></article><article class="card glass"><h3>Origem por conversão</h3><div id="originConversion"></div></article></div><article class="card glass"><h3>Matriz vendedor x origem</h3><div class="table-wrap" id="sellerOrigin"></div></article></section><section class="panel" id="losses"><div class="section-head"><h2>Perdas</h2><p>Motivos e plano de correção.</p></div><div class="kpi-grid" id="lossKpis"></div><div class="grid-2"><article class="card glass"><h3>Top motivos</h3><div id="reasonBars"></div></article><article class="card glass"><h3>Categorias</h3><div id="categoryBars"></div></article></div><article class="card glass"><h3>Motivo por vendedora</h3><div class="table-wrap" id="reasonSeller"></div></article></section><section class="panel" id="projection"><div class="section-head"><h2>Metas & Projeção</h2><p>Forecast e previsibilidade.</p></div><div class="target-grid" id="targetInputs"></div><div class="kpi-grid" id="projectionKpis"></div><div class="grid-2"><article class="card glass"><h3>Comparativo por janela</h3><div class="table-wrap" id="periodCompare"></div></article><article class="card glass"><h3>Forecast por cenário</h3><div class="table-wrap" id="forecastTable"></div></article></div></section><section class="panel" id="fca"><div class="section-head"><h2>Tasks & FCA</h2><p>FCA para execução.</p></div><article class="card glass"><h3>Novo FCA</h3><div class="fca-form"><input id="fcaTitle" placeholder="Título"><input id="fcaOwner" placeholder="Responsável"><input id="fcaDue" type="date"><select id="fcaStatus"><option>Aberto</option><option>Em execução</option><option>Concluído</option><option>Travado</option></select><textarea id="fcaFact" placeholder="Fato"></textarea><textarea id="fcaCause" placeholder="Causa"></textarea><textarea id="fcaAction" placeholder="Ação"></textarea><button class="btn primary" id="addFca">Adicionar FCA</button></div></article><div class="grid-2"><article class="card glass"><h3>FCAs cadastrados</h3><div id="fcaList"></div></article><article class="card glass"><h3>Tasks sugeridas V4 ON</h3><div class="table-wrap" id="taskTable"></div></article></div></section><section class="panel" id="status"><div class="section-head"><h2>Status do sistema</h2><p>Fonte, governança e automações.</p></div><div class="kpi-grid" id="statusKpis"></div><div class="grid-2"><article class="card glass"><h3>Matriz de governança</h3><div class="table-wrap" id="governanceTable"></div></article><article class="card glass"><h3>Arquitetura V4 ON</h3><div class="table-wrap" id="architectureTable"></div></article></div></section></main></div><div class="toast" id="toast"></div><script src="assets/js/data-cache.js?v=bi-006"></script><script src="assets/js/st1-hotfix.js?v=hotfix-006"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05062a">
+  <title>ST1 Internet | BI V4 ON</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/bi.css?v=bi-007">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="ST1 Internet">
+        <img src="assets/img/st1-logo.svg" alt="ST1 Internet">
+        <span>
+          <strong>BI Command Center</strong>
+          <small>Modo V4 ON | GrowthPack</small>
+        </span>
+      </a>
+
+      <nav class="tabs" aria-label="Navegação do painel">
+        <button class="tab active" data-tab="overview" type="button">Visão Geral</button>
+        <button class="tab" data-tab="commercial" type="button">Comercial</button>
+        <button class="tab" data-tab="media" type="button">Mídia</button>
+        <button class="tab" data-tab="losses" type="button">Perdas</button>
+        <button class="tab" data-tab="targets" type="button">Metas</button>
+        <button class="tab" data-tab="fca" type="button">FCA</button>
+        <button class="tab" data-tab="status" type="button">Sistema</button>
+      </nav>
+
+      <div class="actions">
+        <button class="btn" id="syncBtn" type="button">Sincronizar</button>
+        <button class="btn" id="sourceBtn" type="button">Fonte</button>
+        <button class="btn primary" type="button" onclick="window.print()">PDF</button>
+      </div>
+    </header>
+
+    <section class="hero glass">
+      <div class="hero-main">
+        <div class="eyebrow"><span class="dot"></span>ST1 Internet | War Room V4 ON</div>
+        <h1>Command Center <span>Comercial</span></h1>
+        <p>Visão executiva do funil, mídia, perdas, metas e FCAs a partir da base GrowthPack de 01/06/2026 a 18/06/2026.</p>
+        <div class="statusline" id="statusLine"></div>
+      </div>
+
+      <aside class="command-panel">
+        <div>
+          <span class="panel-label">Operação ao vivo</span>
+          <strong id="liveClock">--:--:--</strong>
+          <small id="sourceLabel">Carregando GrowthPack</small>
+        </div>
+        <div class="mini-status" id="heroMiniStatus"></div>
+      </aside>
+    </section>
+
+    <section class="filters glass" aria-label="Filtros globais">
+      <div class="filter-head">
+        <div>
+          <strong>Filtros globais</strong>
+          <span>Período, vendedora, origem, etapa, motivo, categoria e busca.</span>
+        </div>
+        <div class="filter-actions">
+          <button class="btn primary" id="applyFilters" type="button">Aplicar</button>
+          <button class="btn" id="clearFilters" type="button">Limpar</button>
+        </div>
+      </div>
+
+      <div class="filter-grid">
+        <label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label>
+        <label>Data final<input type="date" id="fEnd" value="2026-06-18"></label>
+        <label>Vendedora<select id="fSeller"></select></label>
+        <label>Origem<select id="fOrigin"></select></label>
+        <label>Etapa
+          <select id="fStage">
+            <option value="all">Todas</option>
+            <option value="leadTag">Tag LEAD</option>
+            <option value="mql">MQL</option>
+            <option value="sql">SQL</option>
+            <option value="opportunity">Oportunidade</option>
+            <option value="purchase">Compra</option>
+            <option value="lost">Com motivo de perda</option>
+          </select>
+        </label>
+        <label>Motivo<select id="fReason"></select></label>
+        <label>Categoria<select id="fCategory"></select></label>
+        <label>Busca<input id="fSearch" type="search" placeholder="Lead, origem, motivo"></label>
+      </div>
+    </section>
+
+    <main>
+      <section class="panel active" id="overview">
+        <div class="section-head">
+          <div>
+            <h2>Visão Geral</h2>
+            <p>Resumo executivo com funil, ritmo diário, leitura V4 ON e base filtrada.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" id="globalKpis"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Funil V4 ON</h3>
+            <div id="funnelChart"></div>
+          </article>
+          <article class="card glass">
+            <h3>Leads x compras por dia</h3>
+            <div id="dailyBars"></div>
+          </article>
+        </div>
+        <div class="grid-3" id="executiveInsights"></div>
+        <article class="card glass">
+          <h3>Base filtrada</h3>
+          <div class="table-wrap" id="filteredTable"></div>
+        </article>
+      </section>
+
+      <section class="panel" id="commercial">
+        <div class="section-head">
+          <div>
+            <h2>Comercial</h2>
+            <p>Ranking por vendedora, gargalos de etapa, conversão, ticket e motivos dominantes.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" id="commercialKpis"></div>
+        <div class="seller-grid" id="sellerCards"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Funil por vendedora</h3>
+            <div class="table-wrap" id="sellerFunnel"></div>
+          </article>
+          <article class="card glass">
+            <h3>Perda de etapa</h3>
+            <div class="table-wrap" id="stageLoss"></div>
+          </article>
+        </div>
+        <article class="card glass">
+          <h3>Motivos por vendedora</h3>
+          <div class="table-wrap" id="reasonSeller"></div>
+        </article>
+      </section>
+
+      <section class="panel" id="media">
+        <div class="section-head">
+          <div>
+            <h2>Mídia</h2>
+            <p>Origem, qualidade de lead, conversão por canal e impacto no valor registrado.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" id="mediaKpis"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Origem por volume</h3>
+            <div id="originBars"></div>
+          </article>
+          <article class="card glass">
+            <h3>Origem por conversão</h3>
+            <div id="originConversion"></div>
+          </article>
+        </div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Matriz vendedor x origem</h3>
+            <div class="table-wrap" id="sellerOrigin"></div>
+          </article>
+          <article class="card glass">
+            <h3>Leitura por canal</h3>
+            <div id="mediaInsights"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="losses">
+        <div class="section-head">
+          <div>
+            <h2>Perdas</h2>
+            <p>Motivos, categorias operacionais e impacto por volume.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" id="lossKpis"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Top motivos</h3>
+            <div id="reasonBars"></div>
+          </article>
+          <article class="card glass">
+            <h3>Categorias</h3>
+            <div id="categoryBars"></div>
+          </article>
+        </div>
+        <article class="card glass">
+          <h3>Plano de correção por categoria</h3>
+          <div class="table-wrap" id="categoryPlan"></div>
+        </article>
+      </section>
+
+      <section class="panel" id="targets">
+        <div class="section-head">
+          <div>
+            <h2>Metas</h2>
+            <p>Metas editáveis, projeção de 30 dias, comparativo de janelas e leitura mensal.</p>
+          </div>
+        </div>
+        <div class="target-grid" id="targetInputs"></div>
+        <div class="kpi-grid" id="projectionKpis"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Avanço contra meta</h3>
+            <div id="targetProgress"></div>
+          </article>
+          <article class="card glass">
+            <h3>Forecast por cenário</h3>
+            <div class="table-wrap" id="forecastTable"></div>
+          </article>
+        </div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Comparativo por janela</h3>
+            <div class="table-wrap" id="periodCompare"></div>
+          </article>
+          <article class="card glass">
+            <h3>Comparativo mensal</h3>
+            <div class="table-wrap" id="monthCompare"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="fca">
+        <div class="section-head">
+          <div>
+            <h2>FCA</h2>
+            <p>Registro manual do gestor para transformar risco em execução do time.</p>
+          </div>
+        </div>
+        <article class="card glass">
+          <h3>Novo FCA</h3>
+          <div class="fca-form">
+            <input id="fcaTitle" placeholder="Título">
+            <input id="fcaOwner" placeholder="Responsável">
+            <input id="fcaDue" type="date">
+            <select id="fcaStatus">
+              <option>Aberto</option>
+              <option>Em execução</option>
+              <option>Concluído</option>
+              <option>Travado</option>
+            </select>
+            <textarea id="fcaFact" placeholder="Fato"></textarea>
+            <textarea id="fcaCause" placeholder="Causa"></textarea>
+            <textarea id="fcaAction" placeholder="Ação"></textarea>
+            <button class="btn primary" id="addFca" type="button">Adicionar FCA</button>
+          </div>
+        </article>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>FCAs cadastrados</h3>
+            <div id="fcaList"></div>
+          </article>
+          <article class="card glass">
+            <h3>Tasks sugeridas V4 ON</h3>
+            <div class="table-wrap" id="taskTable"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="status">
+        <div class="section-head">
+          <div>
+            <h2>Sistema</h2>
+            <p>Fonte, consistência da base, governança e arquitetura operacional.</p>
+          </div>
+        </div>
+        <div class="kpi-grid" id="statusKpis"></div>
+        <div class="grid-2">
+          <article class="card glass">
+            <h3>Auditoria de dados</h3>
+            <div class="table-wrap" id="dataAuditTable"></div>
+          </article>
+          <article class="card glass">
+            <h3>Matriz de governança</h3>
+            <div class="table-wrap" id="governanceTable"></div>
+          </article>
+        </div>
+        <article class="card glass">
+          <h3>Arquitetura V4 ON</h3>
+          <div class="table-wrap" id="architectureTable"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/data-cache.js?v=bi-007"></script>
+  <script src="assets/js/st1-hotfix.js?v=hotfix-007"></script>
+</body>
+</html>
