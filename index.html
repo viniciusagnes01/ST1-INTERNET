@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ST1 Internet | BI V4 ON</title>
-  <link rel="stylesheet" href="assets/css/bi.css?v=bi-001">
+  <link rel="stylesheet" href="assets/css/bi.css?v=bi-003">
 </head>
 <body>
   <div class="app">
@@ -44,7 +44,13 @@
     </section>
 
     <section class="filters glass">
-      <div class="filter-head"><div><strong>Filtros globais</strong><span>Todos os blocos abaixo recalculam imediatamente</span></div><button class="btn" id="clearFilters">Limpar filtros</button></div>
+      <div class="filter-head">
+        <div><strong>Filtros globais</strong><span>Todos os blocos abaixo recalculam imediatamente</span></div>
+        <div class="filter-actions">
+          <button class="btn primary" id="applyFilters">Aplicar filtros</button>
+          <button class="btn" id="clearFilters">Limpar filtros</button>
+        </div>
+      </div>
       <div class="filter-grid">
         <label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label>
         <label>Data final<input type="date" id="fEnd" value="2026-06-18"></label>
@@ -108,7 +114,7 @@
     </main>
   </div>
   <div class="toast" id="toast"></div>
-  <script src="assets/js/data-cache.js?v=bi-001"></script>
-  <script src="assets/js/bi-dashboard.js?v=bi-001"></script>
+  <script src="assets/js/data-cache.js?v=bi-003"></script>
+  <script src="assets/js/bi-dashboard.js?v=bi-003"></script>
 </body>
 </html>
