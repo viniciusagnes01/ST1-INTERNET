@@ -15,6 +15,21 @@
     search: ''
   };
 
+  var tabMeta = {
+    overview: { eyebrow: 'Cockpit / Visão Geral', title: 'Visão Geral', copy: 'Resumo executivo da receita, saúde do CRM, ritmo de compra e leitura V4 ON da operação.' },
+    restriction: { eyebrow: 'Cockpit / Restrição', title: 'Restrição', copy: 'TOC, Goldratt e gargalo dominante do sistema traduzidos para ação prática.' },
+    pcp: { eyebrow: 'Cockpit / PCP Comercial', title: 'PCP Comercial', copy: 'Capacidade, aging, fila quente e trabalho em progresso por etapa e por vendedora.' },
+    commercial: { eyebrow: 'Cockpit / Comercial', title: 'Comercial', copy: 'Conversão, ticket, vazamentos de etapa e performance por vendedora.' },
+    media: { eyebrow: 'Cockpit / Mídia', title: 'Mídia', copy: 'Origem, qualidade comercial do lead e impacto real sobre receita e CAC.' },
+    service: { eyebrow: 'Cockpit / Atendimento', title: 'Atendimento', copy: 'Fluxo bot + humano, SLA, qualificação e risco de abandono.' },
+    retention: { eyebrow: 'Cockpit / Retenção', title: 'Retenção', copy: 'CSAT, NPS, recompra, indicação e recuperação de relacionamento.' },
+    losses: { eyebrow: 'Cockpit / Perdas', title: 'Perdas', copy: 'Motivos, categorias operacionais e plano de correção orientado por impacto.' },
+    targets: { eyebrow: 'Cockpit / Metas', title: 'Metas', copy: 'Run rate, forecast, gaps para meta e leitura mensal do que falta destravar.' },
+    fca: { eyebrow: 'Cockpit / FCA', title: 'FCA', copy: 'Registro manual do gestor para transformar fato, causa e ação em execução.' },
+    handoff: { eyebrow: 'Cockpit / Handoff', title: 'Handoff', copy: 'Continuidade de contexto, stack, riscos abertos e próximos 7 dias.' },
+    status: { eyebrow: 'Cockpit / Sistema', title: 'Sistema', copy: 'Auditoria da base, confiabilidade operacional e arquitetura V4 ON em produção.' }
+  };
+
   var defaultTargets = {
     monthlyLeads: 2800,
     monthlyPurchases: 680,
@@ -54,6 +69,25 @@
   }
   function set(id, html) { var node = $(id); if (node) node.innerHTML = html; }
   function text(id, value) { var node = $(id); if (node) node.textContent = value; }
+  function shellMetric(label, value, sub, tone) {
+    return '<article class="glass metric-card"><span class="metric-label">' + esc(label) + '</span><strong class="metric-value">' + value + '</strong><span class="metric-sub ' + esc(tone || '') + '">' + esc(sub) + '</span></article>';
+  }
+  function signalCard(label, value, sub) {
+    return '<div class="signal-card"><span class="kpi-label">' + esc(label) + '</span><strong>' + esc(value) + '</strong><span>' + esc(sub) + '</span></div>';
+  }
+  function updateWorkspaceHead() {
+    var meta = tabMeta[activeTab] || tabMeta.overview;
+    text('activeSectionEyebrow', meta.eyebrow);
+    text('activeSectionTitle', meta.title);
+    text('activeSectionCopy', meta.copy);
+  }
+  function initIcons() {
+    try {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    } catch (error) {}
+  }
 
   function cleanText(value) {
     var text = String(value == null ? '' : value).trim();
@@ -1119,8 +1153,240 @@
     ));
   }
 
+  function renderShell(m, restriction) {
+    var current = restriction.current;
+    var days = daysInSelection(filtered);
+    var openOpps = Math.max(0, m.opportunity - m.purchase);
+    var dateRange = (filters.start || '2026-06-01').slice(5) + ' a ' + (filters.end || '2026-06-18').slice(5);
+
+    text('sourceLabel', 'Fonte: cache GrowthPack | ' + fmt(rows.length) + ' Lead IDs');
+    text('sidebarRestriction', current.key);
+    text('sidebarSupportText', current.action);
+
+    set('heroStatCards',
+      shellMetric('Receita registrada', money(m.value), 'Ticket médio ' + money(m.ticket), 'up') +
+      shellMetric('Compras', fmt(m.purchase), pct(m.conversion) + ' compra / lead', 'up') +
+      shellMetric('Lead IDs', fmt(m.total), fmt(m.mql) + ' MQL | ' + fmt(m.sql) + ' SQL', m.total >= 1000 ? 'warn' : 'up') +
+      shellMetric('Health CRM', pct(m.health), fmt(m.dataIssues) + ' pontos de auditoria', m.health >= 0.7 ? 'up' : 'danger')
+    );
+
+    set('statusLine',
+      '<span class="pill"><b>Leads:</b> ' + fmt(m.total) + '</span>' +
+      '<span class="pill"><b>Compras:</b> ' + fmt(m.purchase) + ' (' + pct(m.conversion) + ')</span>' +
+      '<span class="pill"><b>Valor:</b> ' + money(m.value) + '</span>' +
+      '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>' +
+      '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>'
+    );
+
+    set('heroSignalGrid',
+      signalCard('Janela ativa', dateRange, fmt(days) + ' dias úteis no filtro') +
+      signalCard('Pipeline aberto', fmt(openOpps), 'oportunidades sem compra') +
+      signalCard('Perdas mapeadas', fmt(m.loss), pct(m.lossRate) + ' dos leads filtrados') +
+      signalCard('Modo operacional', 'V4 ON', 'dados → diagnóstico → decisão → tarefa')
+    );
+
+    set('heroRestrictionCard',
+      '<div class="restriction-hero">' +
+      '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + Math.round(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
+      '<div class="compact-grid">' +
+      '<div class="rule-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
+      '<div class="rule-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
+      '</div></div>'
+    );
+
+    set('heroMiniStatus',
+      '<div><b>' + fmt(m.loss) + '</b><span>motivos</span></div>' +
+      '<div><b>' + fmt(m.noOrigin) + '</b><span>sem origem</span></div>' +
+      '<div><b>' + money(m.ticket) + '</b><span>ticket</span></div>' +
+      '<div><b>' + Math.round(current.score) + '</b><span>score restrição</span></div>'
+    );
+  }
+
+  function renderTargets(m, keepInputs) {
+    var targets = getTargets();
+    var days = daysInSelection(filtered);
+    var projectedLeads = div(m.total, days) * 30;
+    var projectedPurchases = div(m.purchase, days) * 30;
+    var projectedRevenue = div(m.value, days) * 30;
+
+    if (!keepInputs) {
+      set('targetInputs',
+        targetInput('monthlyLeads', 'Meta mensal de leads', targets.monthlyLeads, 1) +
+        targetInput('monthlyPurchases', 'Meta mensal de compras', targets.monthlyPurchases, 1) +
+        targetInput('monthlyRevenue', 'Meta mensal de valor', targets.monthlyRevenue, 100) +
+        targetInput('minConversionRate', 'Conversão mínima', targets.minConversionRate, .01) +
+        targetInput('metaInvestment', 'Investimento Meta', targets.metaInvestment, 100) +
+        targetInput('googleInvestment', 'Investimento Google', targets.googleInvestment, 100) +
+        targetInput('minRoas', 'ROAS mínimo', targets.minRoas, .1) +
+        targetInput('sellerDailyCapacity', 'Capacidade vendedor/dia', targets.sellerDailyCapacity, 1)
+      );
+    }
+
+    var investment = number(targets.metaInvestment) + number(targets.googleInvestment);
+    var cac = div(investment, m.purchase);
+    var roas = div(m.value, investment);
+
+    set('projectionKpis',
+      kpi('Proj. leads', fmt(projectedLeads), '30 dias no ritmo atual') +
+      kpi('Proj. compras', fmt(projectedPurchases), '30 dias no ritmo atual') +
+      kpi('Proj. valor', money(projectedRevenue), '30 dias no ritmo atual') +
+      kpi('CAC / ROAS', money(cac) + ' / ' + roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'investimento editável')
+    );
+
+    set('monthPulse',
+      '<div class="bar-list">' +
+      bar('Atual do período', m.total, Math.max(1, targets.monthlyLeads, projectedLeads), fmt(m.total) + ' leads') +
+      bar('Projeção 30 dias', projectedLeads, Math.max(1, targets.monthlyLeads, projectedLeads), fmt(projectedLeads) + ' leads') +
+      bar('Meta mensal', targets.monthlyLeads, Math.max(1, targets.monthlyLeads, projectedLeads), fmt(targets.monthlyLeads) + ' leads') +
+      bar('Compras projetadas', projectedPurchases, Math.max(1, targets.monthlyPurchases, projectedPurchases), fmt(projectedPurchases) + ' compras') +
+      bar('Valor projetado', projectedRevenue, Math.max(1, targets.monthlyRevenue, projectedRevenue), money(projectedRevenue)) +
+      '</div>'
+    );
+
+    set('monthGap',
+      '<div class="compact-grid">' +
+      '<div class="rule-item"><b>Gap de leads</b><span>' + fmt(Math.max(0, number(targets.monthlyLeads) - projectedLeads)) + ' leads faltando no ritmo atual.</span></div>' +
+      '<div class="rule-item"><b>Gap de compras</b><span>' + fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)) + ' compras faltando para fechar o mês.</span></div>' +
+      '<div class="rule-item"><b>Gap de receita</b><span>' + money(Math.max(0, number(targets.monthlyRevenue) - projectedRevenue)) + ' abaixo da meta projetada.</span></div>' +
+      '<div class="rule-item"><b>Leitura V4 ON</b><span>' + (projectedPurchases >= number(targets.monthlyPurchases) ? 'O ritmo atual bate compra; foco é proteger margem e CRM.' : 'A meta não fecha sozinha; a restrição atual precisa virar task com dono.') + '</span></div>' +
+      '</div>'
+    );
+
+    set('targetProgress',
+      progress('Leads', m.total, targets.monthlyLeads) +
+      progress('Compras', m.purchase, targets.monthlyPurchases) +
+      progress('Valor', m.value, targets.monthlyRevenue, true) +
+      progress('Conversão mínima', m.conversion, targets.minConversionRate, false, true) +
+      progressText('ROAS mínimo', roas, targets.minRoas, roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', number(targets.minRoas).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'x')
+    );
+
+    set('forecastTable', table(
+      ['Cenário', 'Leads', 'Compras', 'Conversão', 'Valor', 'CAC', 'ROAS'],
+      [
+        ['Conservador', fmt(projectedLeads * .85), fmt(projectedPurchases * .85), pct(m.conversion * .92), money(projectedRevenue * .85), money(div(investment, projectedPurchases * .85)), (div(projectedRevenue * .85, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x'],
+        ['Atual', fmt(projectedLeads), fmt(projectedPurchases), pct(m.conversion), money(projectedRevenue), money(div(investment, projectedPurchases)), (div(projectedRevenue, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x'],
+        ['Agressivo', fmt(projectedLeads * 1.15), fmt(projectedPurchases * 1.15), pct(Math.min(1, m.conversion * 1.08)), money(projectedRevenue * 1.15), money(div(investment, projectedPurchases * 1.15)), (div(projectedRevenue * 1.15, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x']
+      ]
+    ));
+
+    var windows = [
+      ['01 a 07/06', '2026-06-01', '2026-06-07'],
+      ['08 a 14/06', '2026-06-08', '2026-06-14'],
+      ['15 a 18/06', '2026-06-15', '2026-06-18'],
+      ['Filtro atual', filters.start || '0000-00-00', filters.end || '9999-99-99']
+    ];
+    set('periodCompare', table(
+      ['Janela', 'Leads', 'Compras', 'Conversão', 'Motivos', 'Valor'],
+      windows.map(function (windowRange) {
+        var rangeRows = filtered.filter(function (row) { return row.date >= windowRange[1] && row.date <= windowRange[2]; });
+        var data = metrics(rangeRows);
+        return [windowRange[0], fmt(data.total), fmt(data.purchase), pct(data.conversion), fmt(data.loss), money(data.value)];
+      })
+    ));
+
+    var months = groupBy(filtered, function (row) { return row.date.slice(0, 7); }).sort(function (a, b) { return a.key.localeCompare(b.key); });
+    set('monthCompare', table(
+      ['Mês', 'Leads', 'Compras', 'Conversão', 'Valor', 'Proj. leads', 'Proj. compras'],
+      months.map(function (month) {
+        var monthDays = daysInSelection(month.rows);
+        return [month.key, fmt(month.m.total), fmt(month.m.purchase), pct(month.m.conversion), money(month.m.value), fmt(div(month.m.total, monthDays) * 30), fmt(div(month.m.purchase, monthDays) * 30)];
+      })
+    ));
+  }
+
+  function bind() {
+    $$('.tab').forEach(function (button) {
+      button.addEventListener('click', function () {
+        activeTab = button.getAttribute('data-tab');
+        $$('.tab').forEach(function (item) { item.classList.remove('active'); });
+        button.classList.add('active');
+        $$('.panel').forEach(function (panel) { panel.classList.remove('active'); });
+        var panel = $(activeTab);
+        if (panel) panel.classList.add('active');
+        updateWorkspaceHead();
+      });
+    });
+
+    ['fStart', 'fEnd', 'fSeller', 'fOrigin', 'fStage', 'fReason', 'fCategory'].forEach(function (id) {
+      var node = $(id);
+      if (node) node.addEventListener('change', function () { readFilters(); renderAll(); });
+    });
+    if ($('fSearch')) $('fSearch').addEventListener('input', function () { readFilters(); renderAll(); });
+    if ($('applyFilters')) $('applyFilters').addEventListener('click', function () { readFilters(); renderAll(); toast('Filtro aplicado: ' + fmt(filtered.length) + ' Lead IDs'); });
+    if ($('clearFilters')) $('clearFilters').addEventListener('click', function () { resetFilters(); toast('Filtros limpos'); });
+    if ($('syncBtn')) $('syncBtn').addEventListener('click', function () { loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + fmt(rows.length) + ' Lead IDs'); });
+    if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: cache local GrowthPack com ' + fmt(rows.length) + ' Lead IDs.'); });
+    if ($('toggleFilters') && $('filtersPanel')) {
+      $('toggleFilters').addEventListener('click', function () {
+        $('filtersPanel').classList.toggle('collapsed');
+        $('toggleFilters').classList.toggle('active');
+      });
+    }
+
+    document.addEventListener('input', function (event) {
+      var target = event.target && event.target.getAttribute('data-target');
+      if (!target) return;
+      var targets = getTargets();
+      targets[target] = Number(event.target.value);
+      saveTargets(targets);
+      var m = metrics(filtered);
+      renderTargets(m, true);
+      renderPcp(m);
+    });
+
+    if ($('addFca')) {
+      $('addFca').addEventListener('click', function () {
+        var item = {
+          title: ($('fcaTitle') && $('fcaTitle').value.trim()) || 'FCA sem título',
+          owner: ($('fcaOwner') && $('fcaOwner').value.trim()) || 'Sem responsável',
+          due: ($('fcaDue') && $('fcaDue').value) || 'Sem prazo',
+          status: ($('fcaStatus') && $('fcaStatus').value) || 'Aberto',
+          fact: ($('fcaFact') && $('fcaFact').value.trim()) || '',
+          cause: ($('fcaCause') && $('fcaCause').value.trim()) || '',
+          action: ($('fcaAction') && $('fcaAction').value.trim()) || '',
+          createdAt: new Date().toISOString()
+        };
+        var items = getFcas();
+        items.unshift(item);
+        saveFcas(items);
+        ['fcaTitle', 'fcaOwner', 'fcaDue', 'fcaFact', 'fcaCause', 'fcaAction'].forEach(function (id) {
+          if ($(id)) $(id).value = '';
+        });
+        renderAll();
+        toast('FCA cadastrado');
+      });
+    }
+
+    document.addEventListener('click', function (event) {
+      var index = event.target && event.target.getAttribute('data-remove-fca');
+      if (index == null) return;
+      var items = getFcas();
+      items.splice(Number(index), 1);
+      saveFcas(items);
+      renderAll();
+      toast('FCA removido');
+    });
+  }
+
+  function boot() {
+    try {
+      loadRows();
+      fillFilters();
+      bind();
+      updateWorkspaceHead();
+      initIcons();
+      startClock();
+      renderAll();
+      window.addEventListener('load', initIcons, { once: true });
+      toast('ST1 BI V4 ON ativo: ' + fmt(rows.length) + ' Lead IDs');
+    } catch (error) {
+      showError(error);
+    }
+  }
+
   function renderAll() {
     applyFilters();
+    updateWorkspaceHead();
     var m = metrics(filtered);
     var restriction = restrictionEngine(filtered, m);
     renderShell(m, restriction);
@@ -1180,6 +1446,7 @@
         $$('.panel').forEach(function (panel) { panel.classList.remove('active'); });
         var panel = $(activeTab);
         if (panel) panel.classList.add('active');
+        updateWorkspaceHead();
       });
     });
 
@@ -1192,6 +1459,12 @@
     if ($('clearFilters')) $('clearFilters').addEventListener('click', function () { resetFilters(); toast('Filtros limpos'); });
     if ($('syncBtn')) $('syncBtn').addEventListener('click', function () { loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + fmt(rows.length) + ' Lead IDs'); });
     if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: cache local GrowthPack com ' + fmt(rows.length) + ' Lead IDs.'); });
+    if ($('toggleFilters') && $('filtersPanel')) {
+      $('toggleFilters').addEventListener('click', function () {
+        $('filtersPanel').classList.toggle('collapsed');
+        $('toggleFilters').classList.toggle('active');
+      });
+    }
 
     document.addEventListener('input', function (event) {
       var target = event.target && event.target.getAttribute('data-target');
@@ -1255,8 +1528,11 @@
       loadRows();
       fillFilters();
       bind();
+      updateWorkspaceHead();
+      initIcons();
       startClock();
       renderAll();
+      window.addEventListener('load', initIcons, { once: true });
       toast('ST1 BI V4 ON ativo: ' + fmt(rows.length) + ' Lead IDs');
     } catch (error) {
       showError(error);

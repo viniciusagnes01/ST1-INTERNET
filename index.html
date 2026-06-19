@@ -3,436 +3,545 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#05062a">
-  <title>ST1 Internet | BI V4 ON</title>
+  <meta name="theme-color" content="#040823">
+  <title>ST1 Internet | Cockpit V4 ON</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/bi.css?v=bi-007">
+  <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="assets/css/bi.css?v=bi-010">
 </head>
 <body>
-  <div class="app">
-    <header class="topbar">
-      <a class="brand" href="#overview" aria-label="ST1 Internet">
-        <img src="assets/img/st1-logo.svg" alt="ST1 Internet">
-        <span>
-          <strong>BI Command Center</strong>
-          <small>Modo V4 ON | GrowthPack</small>
-        </span>
-      </a>
+  <div class="dashboard-shell">
+    <aside class="sidebar">
+      <div class="sidebar-panel">
+        <a class="brand" href="#overview" aria-label="ST1 Internet">
+          <img src="assets/img/st1-logo.svg" alt="ST1 Internet">
+          <span class="brand-copy">
+            <strong>ST1 Internet</strong>
+            <small>Command Center | V4 ON</small>
+          </span>
+        </a>
 
-      <nav class="tabs" aria-label="Navegação do painel">
-        <button class="tab active" data-tab="overview" type="button">Visão Geral</button>
-        <button class="tab" data-tab="restriction" type="button">Restrição</button>
-        <button class="tab" data-tab="pcp" type="button">PCP</button>
-        <button class="tab" data-tab="commercial" type="button">Comercial</button>
-        <button class="tab" data-tab="media" type="button">Mídia</button>
-        <button class="tab" data-tab="service" type="button">Atendimento</button>
-        <button class="tab" data-tab="retention" type="button">Retenção</button>
-        <button class="tab" data-tab="losses" type="button">Perdas</button>
-        <button class="tab" data-tab="targets" type="button">Metas</button>
-        <button class="tab" data-tab="fca" type="button">FCA</button>
-        <button class="tab" data-tab="handoff" type="button">Handoff</button>
-        <button class="tab" data-tab="status" type="button">Sistema</button>
-      </nav>
+        <div class="sidebar-group">
+          <span class="sidebar-label">Cockpit</span>
+          <nav class="sidebar-nav" aria-label="Navegação principal">
+            <button class="tab side-tab active" data-tab="overview" type="button">
+              <span class="tab-icon"><i data-lucide="layout-dashboard"></i></span>
+              <span class="tab-copy"><strong>Visão Geral</strong><small>Receita, CRM e ritmo</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="restriction" type="button">
+              <span class="tab-icon"><i data-lucide="radar"></i></span>
+              <span class="tab-copy"><strong>Restrição</strong><small>TOC, Goldratt e trava</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="pcp" type="button">
+              <span class="tab-icon"><i data-lucide="workflow"></i></span>
+              <span class="tab-copy"><strong>PCP</strong><small>Capacidade, fila e aging</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="commercial" type="button">
+              <span class="tab-icon"><i data-lucide="users"></i></span>
+              <span class="tab-copy"><strong>Comercial</strong><small>Conversão por vendedora</small></span>
+            </button>
+          </nav>
+        </div>
 
-      <div class="actions">
-        <button class="btn" id="syncBtn" type="button">Sincronizar</button>
-        <button class="btn" id="sourceBtn" type="button">Fonte</button>
-        <button class="btn primary" type="button" onclick="window.print()">PDF</button>
+        <div class="sidebar-group">
+          <span class="sidebar-label">Operação</span>
+          <nav class="sidebar-nav" aria-label="Operação">
+            <button class="tab side-tab" data-tab="media" type="button">
+              <span class="tab-icon"><i data-lucide="megaphone"></i></span>
+              <span class="tab-copy"><strong>Mídia</strong><small>Canal, origem e ROAS</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="service" type="button">
+              <span class="tab-icon"><i data-lucide="message-square-heart"></i></span>
+              <span class="tab-copy"><strong>Atendimento</strong><small>Bot, humano e SLA</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="retention" type="button">
+              <span class="tab-icon"><i data-lucide="heart-handshake"></i></span>
+              <span class="tab-copy"><strong>Retenção</strong><small>CSAT, NPS e expansão</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="losses" type="button">
+              <span class="tab-icon"><i data-lucide="octagon-alert"></i></span>
+              <span class="tab-copy"><strong>Perdas</strong><small>Motivos e vazamentos</small></span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-group">
+          <span class="sidebar-label">Governança</span>
+          <nav class="sidebar-nav" aria-label="Governança">
+            <button class="tab side-tab" data-tab="targets" type="button">
+              <span class="tab-icon"><i data-lucide="target"></i></span>
+              <span class="tab-copy"><strong>Metas</strong><small>Run rate, forecast e gaps</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="fca" type="button">
+              <span class="tab-icon"><i data-lucide="clipboard-pen-line"></i></span>
+              <span class="tab-copy"><strong>FCA</strong><small>Registro manual do gestor</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="handoff" type="button">
+              <span class="tab-icon"><i data-lucide="between-horizontal-start"></i></span>
+              <span class="tab-copy"><strong>Handoff</strong><small>Contexto e próximos 7 dias</small></span>
+            </button>
+            <button class="tab side-tab" data-tab="status" type="button">
+              <span class="tab-icon"><i data-lucide="shield-check"></i></span>
+              <span class="tab-copy"><strong>Sistema</strong><small>Saúde da base e arquitetura</small></span>
+            </button>
+          </nav>
+        </div>
+
+        <section class="sidebar-brief">
+          <span class="sidebar-label">Foco atual</span>
+          <strong id="sidebarRestriction">Carregando</strong>
+          <p id="sidebarSupportText">Mapeando a principal restrição operacional da ST1.</p>
+        </section>
       </div>
-    </header>
+    </aside>
 
-    <section class="hero glass">
-      <div class="hero-main">
-        <div class="eyebrow"><span class="dot"></span>ST1 Internet | War Room V4 ON</div>
-        <h1>Command Center <span>Comercial</span></h1>
-        <p>Cockpit de receita, restrição, CRM, PCP comercial, mídia, atendimento, retenção e FCAs a partir da base GrowthPack de 01/06/2026 a 18/06/2026.</p>
-        <div class="statusline" id="statusLine"></div>
-      </div>
-
-      <aside class="command-panel">
-        <div>
-          <span class="panel-label">Operação ao vivo</span>
-          <strong id="liveClock">--:--:--</strong>
-          <small id="sourceLabel">Carregando GrowthPack</small>
+    <div class="workspace">
+      <header class="workspace-topbar glass">
+        <div class="workspace-context">
+          <span class="workspace-breadcrumb" id="activeSectionEyebrow">Cockpit / Visão Geral</span>
+          <h1 class="workspace-title" id="activeSectionTitle">Visão Geral</h1>
+          <p class="workspace-copy" id="activeSectionCopy">Cockpit de receita, restrição, CRM, PCP, mídia, atendimento, retenção e governança em modo V4 ON.</p>
         </div>
-        <div class="mini-status" id="heroMiniStatus"></div>
-      </aside>
-    </section>
 
-    <section class="filters glass" aria-label="Filtros globais">
-      <div class="filter-head">
-        <div>
-          <strong>Filtros globais</strong>
-          <span>Período, vendedora, origem, etapa, motivo, categoria e busca.</span>
+        <div class="workspace-actions">
+          <label class="search-shell" aria-label="Busca global">
+            <i data-lucide="search"></i>
+            <input id="fSearch" type="search" placeholder="Buscar lead, origem, motivo">
+          </label>
+          <button class="btn icon-btn" id="toggleFilters" type="button">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>Filtros</span>
+          </button>
+          <button class="btn icon-btn" id="syncBtn" type="button">
+            <i data-lucide="refresh-cw"></i>
+            <span>Atualizar</span>
+          </button>
+          <button class="btn icon-btn" id="sourceBtn" type="button">
+            <i data-lucide="database"></i>
+            <span>Fonte</span>
+          </button>
+          <button class="btn primary icon-btn" type="button" onclick="window.print()">
+            <i data-lucide="file-down"></i>
+            <span>PDF</span>
+          </button>
         </div>
-        <div class="filter-actions">
-          <button class="btn primary" id="applyFilters" type="button">Aplicar</button>
-          <button class="btn" id="clearFilters" type="button">Limpar</button>
-        </div>
-      </div>
+      </header>
 
-      <div class="filter-grid">
-        <label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label>
-        <label>Data final<input type="date" id="fEnd" value="2026-06-18"></label>
-        <label>Vendedora<select id="fSeller"></select></label>
-        <label>Origem<select id="fOrigin"></select></label>
-        <label>Etapa
-          <select id="fStage">
-            <option value="all">Todas</option>
-            <option value="leadTag">Tag LEAD</option>
-            <option value="mql">MQL</option>
-            <option value="sql">SQL</option>
-            <option value="opportunity">Oportunidade</option>
-            <option value="purchase">Compra</option>
-            <option value="lost">Com motivo de perda</option>
-          </select>
-        </label>
-        <label>Motivo<select id="fReason"></select></label>
-        <label>Categoria<select id="fCategory"></select></label>
-        <label>Busca<input id="fSearch" type="search" placeholder="Lead, origem, motivo"></label>
-      </div>
-    </section>
+      <section class="hero-board">
+        <div class="hero-kpi-row" id="heroStatCards"></div>
 
-    <main>
-      <section class="panel active" id="overview">
-        <div class="section-head">
-          <div>
-            <h2>Visão Geral</h2>
-            <p>Resumo executivo com funil, ritmo diário, leitura V4 ON e base filtrada.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="globalKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Funil V4 ON</h3>
-            <div id="funnelChart"></div>
+        <div class="hero-main-grid">
+          <article class="hero-card hero-story glass">
+            <div class="eyebrow"><span class="dot"></span>ST1 Internet | War Room V4 ON</div>
+            <div class="hero-story-grid">
+              <div class="hero-copy-block">
+                <p class="hero-kicker">Cockpit de Receita e Restrição</p>
+                <h2>Onde a receita está travando agora</h2>
+                <p>Visão executiva da operação comercial conectando mídia, CRM, atendimento, capacidade e execução do time em uma única superfície.</p>
+                <div class="statusline" id="statusLine"></div>
+              </div>
+              <div class="signal-grid" id="heroSignalGrid"></div>
+            </div>
           </article>
-          <article class="card glass">
-            <h3>Leads x compras por dia</h3>
-            <div id="dailyBars"></div>
-          </article>
-        </div>
-        <div class="grid-3" id="executiveInsights"></div>
-        <article class="card glass">
-          <h3>Base filtrada</h3>
-          <div class="table-wrap" id="filteredTable"></div>
-        </article>
-      </section>
 
-      <section class="panel" id="restriction">
-        <div class="section-head">
-          <div>
-            <h2>Restrição</h2>
-            <p>Motor TOC/Goldratt para identificar onde a receita está travando agora.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="restrictionKpis"></div>
-        <div class="grid-2">
-          <article class="card glass decision-card">
-            <h3>Restrição atual do sistema</h3>
-            <div id="currentRestriction"></div>
+          <article class="hero-card hero-restriction glass">
+            <span class="panel-label">Restrição dominante</span>
+            <div id="heroRestrictionCard"></div>
           </article>
-          <article class="card glass">
-            <h3>Cinco passos TOC</h3>
-            <div id="tocSteps"></div>
-          </article>
-        </div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Matriz de restrição</h3>
-            <div class="table-wrap" id="restrictionMatrix"></div>
-          </article>
-          <article class="card glass">
-            <h3>Vazamento de receita</h3>
-            <div class="table-wrap" id="revenueLeakTable"></div>
+
+          <article class="hero-card hero-operations glass">
+            <span class="panel-label">Operação ao vivo</span>
+            <strong class="ops-clock" id="liveClock">--:--:--</strong>
+            <small class="ops-source" id="sourceLabel">Carregando GrowthPack</small>
+            <div class="mini-status" id="heroMiniStatus"></div>
           </article>
         </div>
       </section>
 
-      <section class="panel" id="pcp">
-        <div class="section-head">
+      <section class="filters glass collapsed" id="filtersPanel" aria-label="Filtros globais">
+        <div class="filter-head">
           <div>
-            <h2>PCP Comercial</h2>
-            <p>Planejamento e controle do processo: WIP, capacidade, aging, SLA e prioridade do dia.</p>
+            <strong>Filtros globais</strong>
+            <span>Período, vendedora, origem, etapa, motivo e categoria.</span>
+          </div>
+          <div class="filter-actions">
+            <button class="btn primary" id="applyFilters" type="button">Aplicar</button>
+            <button class="btn" id="clearFilters" type="button">Limpar</button>
           </div>
         </div>
-        <div class="kpi-grid" id="pcpKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>WIP por etapa</h3>
-            <div class="table-wrap" id="stageWipTable"></div>
-          </article>
-          <article class="card glass">
-            <h3>Capacidade por vendedora</h3>
-            <div class="table-wrap" id="sellerCapacityTable"></div>
-          </article>
-        </div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Fila de prioridade</h3>
-            <div class="table-wrap" id="priorityQueueTable"></div>
-          </article>
-          <article class="card glass">
-            <h3>Leitura PCP V4 ON</h3>
-            <div id="pcpInsights"></div>
-          </article>
-        </div>
-      </section>
 
-      <section class="panel" id="commercial">
-        <div class="section-head">
-          <div>
-            <h2>Comercial</h2>
-            <p>Ranking por vendedora, gargalos de etapa, conversão, ticket e motivos dominantes.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="commercialKpis"></div>
-        <div class="seller-grid" id="sellerCards"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Funil por vendedora</h3>
-            <div class="table-wrap" id="sellerFunnel"></div>
-          </article>
-          <article class="card glass">
-            <h3>Perda de etapa</h3>
-            <div class="table-wrap" id="stageLoss"></div>
-          </article>
-        </div>
-        <article class="card glass">
-          <h3>Motivos por vendedora</h3>
-          <div class="table-wrap" id="reasonSeller"></div>
-        </article>
-      </section>
-
-      <section class="panel" id="media">
-        <div class="section-head">
-          <div>
-            <h2>Mídia</h2>
-            <p>Origem, qualidade de lead, conversão por canal e impacto no valor registrado.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="mediaKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Origem por volume</h3>
-            <div id="originBars"></div>
-          </article>
-          <article class="card glass">
-            <h3>Origem por conversão</h3>
-            <div id="originConversion"></div>
-          </article>
-        </div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Matriz vendedor x origem</h3>
-            <div class="table-wrap" id="sellerOrigin"></div>
-          </article>
-          <article class="card glass">
-            <h3>Leitura por canal</h3>
-            <div id="mediaInsights"></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel" id="service">
-        <div class="section-head">
-          <div>
-            <h2>Atendimento</h2>
-            <p>Modelo de WhatsApp, bot, transbordo humano e SLA para conectar entrada com execução comercial.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="serviceKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Fluxo bot + humano</h3>
-            <div id="botFlow"></div>
-          </article>
-          <article class="card glass">
-            <h3>SLA e risco de atendimento</h3>
-            <div class="table-wrap" id="slaTable"></div>
-          </article>
-        </div>
-        <article class="card glass">
-          <h3>Playbook de atendimento</h3>
-          <div class="table-wrap" id="servicePlaybook"></div>
-        </article>
-      </section>
-
-      <section class="panel" id="retention">
-        <div class="section-head">
-          <div>
-            <h2>Retenção</h2>
-            <p>Camada de CSAT, NPS, recompra, indicação e réguas de relacionamento para depois da venda.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="retentionKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Segmentos CSAT/NPS</h3>
-            <div id="csatSegments"></div>
-          </article>
-          <article class="card glass">
-            <h3>Régua por grupo</h3>
-            <div class="table-wrap" id="relationshipRules"></div>
-          </article>
-        </div>
-        <article class="card glass">
-          <h3>Oportunidades de retenção e expansão</h3>
-          <div class="table-wrap" id="retentionOpportunities"></div>
-        </article>
-      </section>
-
-      <section class="panel" id="losses">
-        <div class="section-head">
-          <div>
-            <h2>Perdas</h2>
-            <p>Motivos, categorias operacionais e impacto por volume.</p>
-          </div>
-        </div>
-        <div class="kpi-grid" id="lossKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Top motivos</h3>
-            <div id="reasonBars"></div>
-          </article>
-          <article class="card glass">
-            <h3>Categorias</h3>
-            <div id="categoryBars"></div>
-          </article>
-        </div>
-        <article class="card glass">
-          <h3>Plano de correção por categoria</h3>
-          <div class="table-wrap" id="categoryPlan"></div>
-        </article>
-      </section>
-
-      <section class="panel" id="targets">
-        <div class="section-head">
-          <div>
-            <h2>Metas</h2>
-            <p>Metas editáveis, projeção de 30 dias, comparativo de janelas e leitura mensal.</p>
-          </div>
-        </div>
-        <div class="target-grid" id="targetInputs"></div>
-        <div class="kpi-grid" id="projectionKpis"></div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Avanço contra meta</h3>
-            <div id="targetProgress"></div>
-          </article>
-          <article class="card glass">
-            <h3>Forecast por cenário</h3>
-            <div class="table-wrap" id="forecastTable"></div>
-          </article>
-        </div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Comparativo por janela</h3>
-            <div class="table-wrap" id="periodCompare"></div>
-          </article>
-          <article class="card glass">
-            <h3>Comparativo mensal</h3>
-            <div class="table-wrap" id="monthCompare"></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel" id="fca">
-        <div class="section-head">
-          <div>
-            <h2>FCA</h2>
-            <p>Registro manual do gestor para transformar risco em execução do time.</p>
-          </div>
-        </div>
-        <article class="card glass">
-          <h3>Novo FCA</h3>
-          <div class="fca-form">
-            <input id="fcaTitle" placeholder="Título">
-            <input id="fcaOwner" placeholder="Responsável">
-            <input id="fcaDue" type="date">
-            <select id="fcaStatus">
-              <option>Aberto</option>
-              <option>Em execução</option>
-              <option>Concluído</option>
-              <option>Travado</option>
+        <div class="filter-grid">
+          <label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label>
+          <label>Data final<input type="date" id="fEnd" value="2026-06-18"></label>
+          <label>Vendedora<select id="fSeller"></select></label>
+          <label>Origem<select id="fOrigin"></select></label>
+          <label>Etapa
+            <select id="fStage">
+              <option value="all">Todas</option>
+              <option value="leadTag">Tag LEAD</option>
+              <option value="mql">MQL</option>
+              <option value="sql">SQL</option>
+              <option value="opportunity">Oportunidade</option>
+              <option value="purchase">Compra</option>
+              <option value="lost">Com motivo de perda</option>
             </select>
-            <textarea id="fcaFact" placeholder="Fato"></textarea>
-            <textarea id="fcaCause" placeholder="Causa"></textarea>
-            <textarea id="fcaAction" placeholder="Ação"></textarea>
-            <button class="btn primary" id="addFca" type="button">Adicionar FCA</button>
-          </div>
-        </article>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>FCAs cadastrados</h3>
-            <div id="fcaList"></div>
-          </article>
-          <article class="card glass">
-            <h3>Tasks sugeridas V4 ON</h3>
-            <div class="table-wrap" id="taskTable"></div>
-          </article>
+          </label>
+          <label>Motivo<select id="fReason"></select></label>
+          <label>Categoria<select id="fCategory"></select></label>
         </div>
       </section>
 
-      <section class="panel" id="handoff">
-        <div class="section-head">
-          <div>
-            <h2>Handoff</h2>
-            <p>Continuidade de conta: contexto, stack, riscos, próximos 7 dias e pauta do próximo check-in.</p>
+      <main class="workspace-main">
+        <section class="panel active" id="overview">
+          <div class="section-head">
+            <div>
+              <h2>Visão Geral</h2>
+              <p>Resumo executivo do funil, ritmo de compra, base filtrada e leitura V4 ON do que está puxando ou travando resultado.</p>
+            </div>
           </div>
-        </div>
-        <div class="kpi-grid" id="handoffKpis"></div>
-        <div class="grid-2">
+          <div class="kpi-grid" id="globalKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Funil V4 ON</h3>
+              <div id="funnelChart"></div>
+            </article>
+            <article class="card glass">
+              <h3>Leads x compras por dia</h3>
+              <div id="dailyBars"></div>
+            </article>
+          </div>
+          <div class="grid-3" id="executiveInsights"></div>
           <article class="card glass">
-            <h3>Resumo executivo de transição</h3>
-            <div id="handoffSummary"></div>
+            <h3>Base filtrada</h3>
+            <div class="table-wrap" id="filteredTable"></div>
           </article>
-          <article class="card glass">
-            <h3>Stack e fontes</h3>
-            <div class="table-wrap" id="stackTable"></div>
-          </article>
-        </div>
-        <div class="grid-2">
-          <article class="card glass">
-            <h3>Próximos 7 dias</h3>
-            <div class="table-wrap" id="nextSevenDays"></div>
-          </article>
-          <article class="card glass">
-            <h3>Riscos de continuidade</h3>
-            <div class="table-wrap" id="handoffRisks"></div>
-          </article>
-        </div>
-      </section>
+        </section>
 
-      <section class="panel" id="status">
-        <div class="section-head">
-          <div>
-            <h2>Sistema</h2>
-            <p>Fonte, consistência da base, governança e arquitetura operacional.</p>
+        <section class="panel" id="restriction">
+          <div class="section-head">
+            <div>
+              <h2>Restrição</h2>
+              <p>Motor TOC/Goldratt para identificar onde a receita está travando agora.</p>
+            </div>
           </div>
-        </div>
-        <div class="kpi-grid" id="statusKpis"></div>
-        <div class="grid-2">
+          <div class="kpi-grid" id="restrictionKpis"></div>
+          <div class="grid-2">
+            <article class="card glass decision-card">
+              <h3>Restrição atual do sistema</h3>
+              <div id="currentRestriction"></div>
+            </article>
+            <article class="card glass">
+              <h3>Cinco passos TOC</h3>
+              <div id="tocSteps"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Matriz de restrição</h3>
+              <div class="table-wrap" id="restrictionMatrix"></div>
+            </article>
+            <article class="card glass">
+              <h3>Vazamento de receita</h3>
+              <div class="table-wrap" id="revenueLeakTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="pcp">
+          <div class="section-head">
+            <div>
+              <h2>PCP Comercial</h2>
+              <p>Planejamento e controle do processo: WIP, capacidade, aging, SLA e prioridade do dia.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="pcpKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>WIP por etapa</h3>
+              <div class="table-wrap" id="stageWipTable"></div>
+            </article>
+            <article class="card glass">
+              <h3>Capacidade por vendedora</h3>
+              <div class="table-wrap" id="sellerCapacityTable"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Fila de prioridade</h3>
+              <div class="table-wrap" id="priorityQueueTable"></div>
+            </article>
+            <article class="card glass">
+              <h3>Leitura PCP V4 ON</h3>
+              <div id="pcpInsights"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="commercial">
+          <div class="section-head">
+            <div>
+              <h2>Comercial</h2>
+              <p>Ranking por vendedora, gargalos de etapa, conversão, ticket e motivos dominantes.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="commercialKpis"></div>
+          <div class="seller-grid" id="sellerCards"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Funil por vendedora</h3>
+              <div class="table-wrap" id="sellerFunnel"></div>
+            </article>
+            <article class="card glass">
+              <h3>Perda de etapa</h3>
+              <div class="table-wrap" id="stageLoss"></div>
+            </article>
+          </div>
           <article class="card glass">
-            <h3>Auditoria de dados</h3>
-            <div class="table-wrap" id="dataAuditTable"></div>
+            <h3>Motivos por vendedora</h3>
+            <div class="table-wrap" id="reasonSeller"></div>
           </article>
+        </section>
+
+        <section class="panel" id="media">
+          <div class="section-head">
+            <div>
+              <h2>Mídia</h2>
+              <p>Origem, qualidade de lead, conversão por canal e impacto no valor registrado.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="mediaKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Origem por volume</h3>
+              <div id="originBars"></div>
+            </article>
+            <article class="card glass">
+              <h3>Origem por conversão</h3>
+              <div id="originConversion"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Matriz vendedor x origem</h3>
+              <div class="table-wrap" id="sellerOrigin"></div>
+            </article>
+            <article class="card glass">
+              <h3>Leitura por canal</h3>
+              <div id="mediaInsights"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="service">
+          <div class="section-head">
+            <div>
+              <h2>Atendimento</h2>
+              <p>Modelo de WhatsApp, bot, transbordo humano e SLA para conectar entrada com execução comercial.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="serviceKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Fluxo bot + humano</h3>
+              <div id="botFlow"></div>
+            </article>
+            <article class="card glass">
+              <h3>SLA e risco de atendimento</h3>
+              <div class="table-wrap" id="slaTable"></div>
+            </article>
+          </div>
           <article class="card glass">
-            <h3>Matriz de governança</h3>
-            <div class="table-wrap" id="governanceTable"></div>
+            <h3>Playbook de atendimento</h3>
+            <div class="table-wrap" id="servicePlaybook"></div>
           </article>
-        </div>
-        <article class="card glass">
-          <h3>Arquitetura V4 ON</h3>
-          <div class="table-wrap" id="architectureTable"></div>
-        </article>
-      </section>
-    </main>
+        </section>
+
+        <section class="panel" id="retention">
+          <div class="section-head">
+            <div>
+              <h2>Retenção</h2>
+              <p>Camada de CSAT, NPS, recompra, indicação e réguas de relacionamento para depois da venda.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="retentionKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Segmentos CSAT/NPS</h3>
+              <div id="csatSegments"></div>
+            </article>
+            <article class="card glass">
+              <h3>Régua por grupo</h3>
+              <div class="table-wrap" id="relationshipRules"></div>
+            </article>
+          </div>
+          <article class="card glass">
+            <h3>Oportunidades de retenção e expansão</h3>
+            <div class="table-wrap" id="retentionOpportunities"></div>
+          </article>
+        </section>
+
+        <section class="panel" id="losses">
+          <div class="section-head">
+            <div>
+              <h2>Perdas</h2>
+              <p>Motivos, categorias operacionais e impacto por volume.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="lossKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Top motivos</h3>
+              <div id="reasonBars"></div>
+            </article>
+            <article class="card glass">
+              <h3>Categorias</h3>
+              <div id="categoryBars"></div>
+            </article>
+          </div>
+          <article class="card glass">
+            <h3>Plano de correção por categoria</h3>
+            <div class="table-wrap" id="categoryPlan"></div>
+          </article>
+        </section>
+
+        <section class="panel" id="targets">
+          <div class="section-head">
+            <div>
+              <h2>Metas</h2>
+              <p>Metas editáveis, projeção de 30 dias, comparativos e leitura mensal orientada por run rate.</p>
+            </div>
+          </div>
+          <div class="target-grid" id="targetInputs"></div>
+          <div class="kpi-grid" id="projectionKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Ritmo mensal</h3>
+              <div id="monthPulse"></div>
+            </article>
+            <article class="card glass">
+              <h3>Gap para meta</h3>
+              <div id="monthGap"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Avanço contra meta</h3>
+              <div id="targetProgress"></div>
+            </article>
+            <article class="card glass">
+              <h3>Forecast por cenário</h3>
+              <div class="table-wrap" id="forecastTable"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Comparativo por janela</h3>
+              <div class="table-wrap" id="periodCompare"></div>
+            </article>
+            <article class="card glass">
+              <h3>Comparativo mensal</h3>
+              <div class="table-wrap" id="monthCompare"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="fca">
+          <div class="section-head">
+            <div>
+              <h2>FCA</h2>
+              <p>Registro manual do gestor para transformar risco em execução do time.</p>
+            </div>
+          </div>
+          <article class="card glass">
+            <h3>Novo FCA</h3>
+            <div class="fca-form">
+              <input id="fcaTitle" placeholder="Título">
+              <input id="fcaOwner" placeholder="Responsável">
+              <input id="fcaDue" type="date">
+              <select id="fcaStatus">
+                <option>Aberto</option>
+                <option>Em execução</option>
+                <option>Concluído</option>
+                <option>Travado</option>
+              </select>
+              <textarea id="fcaFact" placeholder="Fato"></textarea>
+              <textarea id="fcaCause" placeholder="Causa"></textarea>
+              <textarea id="fcaAction" placeholder="Ação"></textarea>
+              <button class="btn primary" id="addFca" type="button">Adicionar FCA</button>
+            </div>
+          </article>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>FCAs cadastrados</h3>
+              <div id="fcaList"></div>
+            </article>
+            <article class="card glass">
+              <h3>Tasks sugeridas V4 ON</h3>
+              <div class="table-wrap" id="taskTable"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="handoff">
+          <div class="section-head">
+            <div>
+              <h2>Handoff</h2>
+              <p>Continuidade de conta: contexto, stack, riscos, próximos 7 dias e pauta do próximo check-in.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="handoffKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Resumo executivo de transição</h3>
+              <div id="handoffSummary"></div>
+            </article>
+            <article class="card glass">
+              <h3>Stack e fontes</h3>
+              <div class="table-wrap" id="stackTable"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Próximos 7 dias</h3>
+              <div class="table-wrap" id="nextSevenDays"></div>
+            </article>
+            <article class="card glass">
+              <h3>Riscos de continuidade</h3>
+              <div class="table-wrap" id="handoffRisks"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="status">
+          <div class="section-head">
+            <div>
+              <h2>Sistema</h2>
+              <p>Fonte, consistência da base, governança e arquitetura operacional.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="statusKpis"></div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Auditoria de dados</h3>
+              <div class="table-wrap" id="dataAuditTable"></div>
+            </article>
+            <article class="card glass">
+              <h3>Matriz de governança</h3>
+              <div class="table-wrap" id="governanceTable"></div>
+            </article>
+          </div>
+          <article class="card glass">
+            <h3>Arquitetura V4 ON</h3>
+            <div class="table-wrap" id="architectureTable"></div>
+          </article>
+        </section>
+      </main>
+    </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="assets/js/main.js?v=bi-009"></script>
+  <script type="module" src="assets/js/main.js?v=bi-010"></script>
 </body>
 </html>
