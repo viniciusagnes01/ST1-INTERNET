@@ -1153,47 +1153,416 @@
     ));
   }
 
-  function renderShell(m, restriction) {
+  function buildHeroContext(m, restriction) {
     var current = restriction.current;
     var days = daysInSelection(filtered);
     var openOpps = Math.max(0, m.opportunity - m.purchase);
     var dateRange = (filters.start || '2026-06-01').slice(5) + ' a ' + (filters.end || '2026-06-18').slice(5);
+    var sellers = groupBy(filtered, function (row) { return row.seller; });
+    var sellersByPurchase = sellers.slice().sort(function (a, b) { return b.m.purchase - a.m.purchase || b.m.conversion - a.m.conversion; });
+    var sellersByConversion = sellers.slice().sort(function (a, b) { return b.m.conversion - a.m.conversion || b.m.purchase - a.m.purchase; });
+    var sellersByTicket = sellers.slice().sort(function (a, b) { return b.m.ticket - a.m.ticket; });
+    var sellersByLoss = sellers.slice().sort(function (a, b) { return b.m.loss - a.m.loss; });
+    var bestCloser = sellersByPurchase[0] || { key: 'Sem dado', m: { purchase: 0, conversion: 0, ticket: 0, total: 0, loss: 0 } };
+    var bestConverter = sellersByConversion[0] || bestCloser;
+    var weakestSeller = sellersByConversion[sellersByConversion.length - 1] || bestCloser;
+    var topTicketSeller = sellersByTicket[0] || bestCloser;
+    var mostLossSeller = sellersByLoss[0] || bestCloser;
+    var stages = stageModel(m);
+    var topStage = stages.slice().sort(function (a, b) { return b.wip - a.wip; })[0] || { key: 'Sem gargalo', wip: 0, aging: 'ok', owner: 'Sem dono' };
+    var google = metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; }));
+    var meta = metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; }));
+    var reasons = groupBy(filtered.filter(function (row) { return row.lossReason; }), function (row) { return row.lossReason; }).sort(function (a, b) { return b.m.total - a.m.total; });
+    var categories = groupBy(filtered.filter(function (row) { return row.lossReason; }), function (row) { return row.reasonCategory; }).sort(function (a, b) { return b.m.total - a.m.total; });
+    var topReasonItem = reasons[0] || { key: 'Sem motivo dominante', m: { total: 0 } };
+    var topCategoryItem = categories[0] || { key: 'Sem categoria dominante', m: { total: 0 } };
+    var conversations = m.total;
+    var qualified = m.mql;
+    var human = m.sql;
+    var abandoned = reasonCount(filtered, 'falta de interesse') + reasonCount(filtered, 'atendimento');
+    var outsideHours = countWhere(filtered, function (row) {
+      var day = new Date(row.date + 'T00:00:00').getDay();
+      return day === 0 || day === 6;
+    });
+    var slaRisk = m.noOrigin + abandoned + Math.max(0, m.total - m.leadTag);
+    var promoters = Math.round(m.purchase * .42);
+    var detractors = Math.max(0, m.purchase - promoters - Math.round(m.purchase * .36));
+    var inactive = Math.max(0, m.loss - m.purchase);
+    var expansion = Math.round(m.purchase * .18);
+    var targets = getTargets();
+    var projectedLeads = div(m.total, Math.max(1, days)) * 30;
+    var projectedPurchases = div(m.purchase, Math.max(1, days)) * 30;
+    var projectedRevenue = div(m.value, Math.max(1, days)) * 30;
+    var investment = number(targets.metaInvestment) + number(targets.googleInvestment);
+    var roas = div(m.value, investment);
+    var fcas = getFcas();
+    var openFcas = fcas.filter(function (item) { return item.status !== 'Concluído'; }).length;
+    var blockedFcas = fcas.filter(function (item) { return item.status === 'Travado'; }).length;
+    var doneFcas = fcas.filter(function (item) { return item.status === 'Concluído'; }).length;
+    var issueCount = m.noOrigin + m.reasonWithoutLostFlag + m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp + m.valueWithoutPurchase + m.purchaseZeroValue;
+    var riskBlocks = [m.noOrigin, m.reasonWithoutLostFlag, openOpps, m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp].filter(function (value) { return value > 0; }).length;
+
+    var contexts = {
+      overview: {
+        kicker: 'Cockpit de Receita e Restrição',
+        title: 'Onde a receita está travando agora',
+        copy: 'Visão executiva da operação comercial conectando mídia, CRM, atendimento, capacidade e execução do time em uma única superfície.',
+        asideLabel: 'Restrição dominante',
+        statCards:
+          shellMetric('Receita registrada', money(m.value), 'Ticket médio ' + money(m.ticket), 'up') +
+          shellMetric('Compras', fmt(m.purchase), pct(m.conversion) + ' compra / lead', 'up') +
+          shellMetric('Lead IDs', fmt(m.total), fmt(m.mql) + ' MQL | ' + fmt(m.sql) + ' SQL', m.total >= 1000 ? 'warn' : 'up') +
+          shellMetric('Health CRM', pct(m.health), fmt(m.dataIssues) + ' pontos de auditoria', m.health >= 0.7 ? 'up' : 'danger'),
+        statusHtml:
+          '<span class="pill"><b>Leads:</b> ' + fmt(m.total) + '</span>' +
+          '<span class="pill"><b>Compras:</b> ' + fmt(m.purchase) + ' (' + pct(m.conversion) + ')</span>' +
+          '<span class="pill"><b>Valor:</b> ' + money(m.value) + '</span>' +
+          '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>' +
+          '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>',
+        signalHtml:
+          signalCard('Janela ativa', dateRange, fmt(days) + ' dias úteis no filtro') +
+          signalCard('Pipeline aberto', fmt(openOpps), 'oportunidades sem compra') +
+          signalCard('Perdas mapeadas', fmt(m.loss), pct(m.lossRate) + ' dos leads filtrados') +
+          signalCard('Modo operacional', 'V4 ON', 'dados → diagnóstico → decisão → tarefa'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + Math.round(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
+          '<div class="rule-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
+          '</div></div>'
+      },
+      restriction: {
+        kicker: 'Motor TOC / Goldratt',
+        title: 'Qual trava está tirando velocidade da receita',
+        copy: 'O foco sai da métrica isolada e vai para a restrição dominante, com ação, dono e prazo para destravar o sistema.',
+        asideLabel: 'Plano TOC',
+        statCards:
+          shellMetric('Restrição atual', esc(current.key), 'score ' + fmt(current.score), current.kind === 'danger' ? 'danger' : 'warn') +
+          shellMetric('WIP crítico', fmt(topStage.wip), topStage.key + ' | aging ' + topStage.aging, topStage.wip > 80 ? 'danger' : 'warn') +
+          shellMetric('Perda operacional', fmt(m.loss), pct(m.lossRate) + ' dos leads', 'warn') +
+          shellMetric('Pipeline aberto', fmt(openOpps), 'necessita follow-up e saída', openOpps > 0 ? 'warn' : 'up'),
+        statusHtml:
+          '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>' +
+          '<span class="pill"><b>WIP:</b> ' + fmt(topStage.wip) + ' em ' + esc(topStage.key) + '</span>' +
+          '<span class="pill"><b>Dono:</b> ' + esc(current.owner) + '</span>' +
+          '<span class="pill"><b>Prazo:</b> ' + esc(current.due) + '</span>',
+        signalHtml:
+          signalCard('Restrição atual', current.key, 'maior impacto no filtro') +
+          signalCard('2ª restrição', restriction.candidates[1] ? restriction.candidates[1].key : 'Sem segunda restrição', 'próxima trava provável') +
+          signalCard('Etapa travada', topStage.key, fmt(topStage.wip) + ' registros acumulados') +
+          signalCard('Ação imediata', current.owner, current.action),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Impacto estimado</span><strong>' + fmt(m.dataIssues) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Impacto</b><span>' + esc(current.impact) + '</span></div>' +
+          '<div class="rule-item"><b>Ação V4 ON</b><span>' + esc(current.action) + '</span></div>' +
+          '<div class="rule-item"><b>Dono</b><span>' + esc(current.owner) + '</span></div>' +
+          '<div class="rule-item"><b>Prazo</b><span>' + esc(current.due) + '</span></div>' +
+          '</div></div>'
+      },
+      pcp: {
+        kicker: 'Planejamento e Controle do Processo',
+        title: 'Qual fila precisa andar hoje',
+        copy: 'PCP comercial para enxergar capacidade, aging, gargalo por etapa e onde o time precisa atacar primeiro.',
+        asideLabel: 'Foco do dia',
+        statCards:
+          shellMetric('Etapa crítica', esc(topStage.key), fmt(topStage.wip) + ' em fila', topStage.wip > 80 ? 'danger' : 'warn') +
+          shellMetric('Pipeline aberto', fmt(openOpps), 'oportunidades sem compra', openOpps > 0 ? 'warn' : 'up') +
+          shellMetric('Capacidade teórica', fmt(sellers.length * targets.sellerDailyCapacity * days), fmt(targets.sellerDailyCapacity) + ' por vendedora/dia', 'up') +
+          shellMetric('Sobrecarga', fmt(countWhere(sellers, function (seller) { return div(seller.m.total, Math.max(1, days)) > targets.sellerDailyCapacity; })), 'vendedoras acima da capacidade', 'warn'),
+        statusHtml:
+          '<span class="pill"><b>WIP:</b> ' + fmt(topStage.wip) + ' em ' + esc(topStage.key) + '</span>' +
+          '<span class="pill"><b>Pipeline:</b> ' + fmt(openOpps) + '</span>' +
+          '<span class="pill"><b>Capacidade/dia:</b> ' + fmt(targets.sellerDailyCapacity) + '</span>' +
+          '<span class="pill"><b>Janela:</b> ' + dateRange + '</span>',
+        signalHtml:
+          signalCard('Etapa com aging', topStage.key, topStage.aging + ' | dono ' + topStage.owner) +
+          signalCard('Oportunidades paradas', fmt(openOpps), 'necessitam follow-up') +
+          signalCard('Maior fila', bestCloser.key, fmt(Math.max(0, bestCloser.m.opportunity - bestCloser.m.purchase)) + ' opp sem compra') +
+          signalCard('Fila quente', 'P0', 'oportunidade aberta e perda sem status vêm antes'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Prioridade do dia</span><strong>' + fmt(topStage.wip) + '</strong></div>' + tag(topStage.wip > 80 ? 'danger' : 'warn', topStage.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Fila quente</b><span>Atacar ' + esc(topStage.key) + ' e oportunidades sem compra antes de puxar volume novo.</span></div>' +
+          '<div class="rule-item"><b>Risco</b><span>' + fmt(m.reasonWithoutLostFlag) + ' perdas sem status e ' + fmt(m.noOrigin) + ' sem origem atrapalham a priorização.</span></div>' +
+          '</div></div>'
+      },
+      commercial: {
+        kicker: 'Fluxo comercial',
+        title: 'Quem está convertendo e onde perde tração',
+        copy: 'Leitura direta de conversão, ticket, vazamento de etapa e motivo dominante para orientar gestão comercial.',
+        asideLabel: 'Sinal comercial',
+        statCards:
+          shellMetric('Top closer', fmt(bestCloser.m.purchase), bestCloser.key + ' | ' + pct(bestCloser.m.conversion), 'up') +
+          shellMetric('Melhor conversão', pct(bestConverter.m.conversion), bestConverter.key, 'up') +
+          shellMetric('Ticket líder', money(topTicketSeller.m.ticket), topTicketSeller.key, 'warn') +
+          shellMetric('Quebras de etapa', fmt(m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp), 'funil fora de ordem', 'danger'),
+        statusHtml:
+          '<span class="pill"><b>Top closer:</b> ' + esc(bestCloser.key) + '</span>' +
+          '<span class="pill"><b>Melhor conversão:</b> ' + pct(bestConverter.m.conversion) + '</span>' +
+          '<span class="pill"><b>Motivo dominante:</b> ' + esc(topReasonItem.key) + '</span>' +
+          '<span class="pill"><b>Pipeline:</b> ' + fmt(openOpps) + '</span>',
+        signalHtml:
+          signalCard('Maior volume', bestCloser.key, fmt(bestCloser.m.total) + ' leads no filtro') +
+          signalCard('Melhor aproveitamento', bestConverter.key, pct(bestConverter.m.conversion) + ' compra / lead') +
+          signalCard('Ponto de atenção', weakestSeller.key, pct(weakestSeller.m.conversion) + ' compra / lead') +
+          signalCard('Maior atrito', mostLossSeller.key, fmt(mostLossSeller.m.loss) + ' motivos registrados'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Motivo dominante</span><strong>' + fmt(topReasonItem.m.total) + '</strong></div>' + tag('warn', topReasonItem.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>' + esc(topReasonItem.key) + ' é o principal vazamento do time neste filtro.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Revisar script, régua e alocação para ' + esc(weakestSeller.key) + ' sem perder o que já funciona com ' + esc(bestCloser.key) + '.</span></div>' +
+          '</div></div>'
+      },
+      media: {
+        kicker: 'Qualidade de canal',
+        title: 'Qual origem traz lead quente e qual está poluindo a fila',
+        copy: 'O painel cruza canal com conversão comercial, origem vazia e impacto no esforço operacional do time.',
+        asideLabel: 'Sinal de canal',
+        statCards:
+          shellMetric('Google Ads', pct(google.conversion), fmt(google.purchase) + ' compras em ' + fmt(google.total) + ' leads', google.conversion >= meta.conversion ? 'up' : 'warn') +
+          shellMetric('Meta Ads', pct(meta.conversion), fmt(meta.purchase) + ' compras em ' + fmt(meta.total) + ' leads', meta.conversion < google.conversion ? 'danger' : 'warn') +
+          shellMetric('Sem origem', fmt(m.noOrigin), pct(div(m.noOrigin, Math.max(1, m.total))) + ' do filtro', 'danger') +
+          shellMetric('ROAS lido', roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'com investimentos editáveis', roas >= number(targets.minRoas) ? 'up' : 'warn'),
+        statusHtml:
+          '<span class="pill"><b>Google:</b> ' + pct(google.conversion) + '</span>' +
+          '<span class="pill"><b>Meta:</b> ' + pct(meta.conversion) + '</span>' +
+          '<span class="pill"><b>Sem origem:</b> ' + fmt(m.noOrigin) + '</span>' +
+          '<span class="pill"><b>ROAS:</b> ' + roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x</span>',
+        signalHtml:
+          signalCard('Canal mais quente', google.conversion >= meta.conversion ? 'Google Ads' : 'Meta Ads', 'maior conversão no filtro') +
+          signalCard('Canal mais frio', google.conversion < meta.conversion ? 'Google Ads' : 'Meta Ads', 'precisa revisar promessa e cobertura') +
+          signalCard('Origem cega', fmt(m.noOrigin), 'sem atribuição séria de CAC') +
+          signalCard('Receita em risco', esc(current.key), 'restrição ainda puxa a leitura de canal'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Gap de canal</span><strong>' + pct(Math.max(0, google.conversion - meta.conversion)) + '</strong></div>' + tag('info', 'Google vs Meta') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>Google converte ' + pct(google.conversion) + ' e Meta ' + pct(meta.conversion) + ' no filtro atual.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Fechar origem vazia e cruzar Meta com motivo de perda antes de escalar volume.</span></div>' +
+          '</div></div>'
+      },
+      service: {
+        kicker: 'Atendimento e transbordo',
+        title: 'Atendimento precisa virar fluxo, não ruído',
+        copy: 'O cockpit mede da entrada até o transbordo humano, destacando abandono, cobertura e risco de SLA.',
+        asideLabel: 'SLA operacional',
+        statCards:
+          shellMetric('Conversas / leads', fmt(conversations), 'entrada operacional', 'up') +
+          shellMetric('Qualificados', fmt(qualified), pct(div(qualified, Math.max(1, conversations))) + ' viram MQL', 'up') +
+          shellMetric('Humano', fmt(human), pct(div(human, Math.max(1, conversations))) + ' chegam em SQL', 'warn') +
+          shellMetric('Risco SLA', fmt(slaRisk), 'abandono + origem + lead sem marcação', slaRisk > m.total * .4 ? 'danger' : 'warn'),
+        statusHtml:
+          '<span class="pill"><b>Entrada:</b> ' + fmt(conversations) + '</span>' +
+          '<span class="pill"><b>Qualificados:</b> ' + fmt(qualified) + '</span>' +
+          '<span class="pill"><b>Humano:</b> ' + fmt(human) + '</span>' +
+          '<span class="pill"><b>Risco SLA:</b> ' + fmt(slaRisk) + '</span>',
+        signalHtml:
+          signalCard('Abandono inferido', fmt(abandoned), 'falta de interesse + atendimento não comercial') +
+          signalCard('Fora do horário', fmt(outsideHours), 'entradas de sábado/domingo') +
+          signalCard('Sem tag LEAD', fmt(Math.max(0, m.total - m.leadTag)), 'histórico e automação quebram') +
+          signalCard('Sinal de cobertura', fmt(m.noOrigin), 'origem ausente atrapalha fila e SLA'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Risco de SLA</span><strong>' + fmt(slaRisk) + '</strong></div>' + tag(slaRisk > m.total * .4 ? 'danger' : 'warn', 'Atendimento') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>Entrada sem marcação e abandono comprometem o transbordo para comercial.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Tag automática no nascimento, fila separada e régua D0-D3 no abandono.</span></div>' +
+          '</div></div>'
+      },
+      retention: {
+        kicker: 'Pós-venda e expansão',
+        title: 'Depois da venda, onde existe recuperação e valor extra',
+        copy: 'A camada de retenção organiza promotores, detratores, reativação e expansão para não perder receita depois do fechamento.',
+        asideLabel: 'Leitura de retenção',
+        statCards:
+          shellMetric('Promotores estimados', fmt(promoters), 'clientes para depoimento e indicação', 'up') +
+          shellMetric('Detratores estimados', fmt(detractors), 'fila de recuperação', detractors > promoters * .4 ? 'danger' : 'warn') +
+          shellMetric('Inativos / perdidos', fmt(inactive), 'reativação por motivo', 'warn') +
+          shellMetric('Expansão potencial', fmt(expansion), 'upsell, recompra e indicação', 'up'),
+        statusHtml:
+          '<span class="pill"><b>Promotores:</b> ' + fmt(promoters) + '</span>' +
+          '<span class="pill"><b>Detratores:</b> ' + fmt(detractors) + '</span>' +
+          '<span class="pill"><b>Expansão:</b> ' + fmt(expansion) + '</span>' +
+          '<span class="pill"><b>Base vendida:</b> ' + fmt(m.purchase) + '</span>',
+        signalHtml:
+          signalCard('Depoimentos', fmt(promoters), 'base para prova social') +
+          signalCard('Reativação', fmt(inactive), 'fila fria para recuperação') +
+          signalCard('Indicação', fmt(Math.round(promoters * .45)), 'promotores com potencial de referral') +
+          signalCard('Recuperação', fmt(detractors), 'tratar experiência e risco'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Base pós-venda</span><strong>' + fmt(m.purchase) + '</strong></div>' + tag('ok', 'Retenção') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>Promotores alimentam prova social; detratores exigem recuperação com SLA.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Separar régua de depoimento, indicação, reativação e correção de experiência.</span></div>' +
+          '</div></div>'
+      },
+      losses: {
+        kicker: 'Vazamentos de receita',
+        title: 'Qual motivo está drenando o resultado antes da venda',
+        copy: 'A leitura de perdas deixa de ser genérica e passa a mostrar o que mais consome tempo, margem e capacidade do time.',
+        asideLabel: 'Motivo dominante',
+        statCards:
+          shellMetric('Motivos mapeados', fmt(m.loss), pct(m.lossRate) + ' dos leads no filtro', 'warn') +
+          shellMetric('Gap de status', fmt(m.reasonWithoutLostFlag), 'motivo sem LEAD PERDIDO', 'danger') +
+          shellMetric('Categoria líder', esc(topCategoryItem.key), fmt(topCategoryItem.m.total) + ' registros', 'warn') +
+          shellMetric('Top motivo', fmt(topReasonItem.m.total), topReasonItem.key, 'danger'),
+        statusHtml:
+          '<span class="pill"><b>Motivos:</b> ' + fmt(m.loss) + '</span>' +
+          '<span class="pill"><b>Top motivo:</b> ' + esc(topReasonItem.key) + '</span>' +
+          '<span class="pill"><b>Categoria:</b> ' + esc(topCategoryItem.key) + '</span>' +
+          '<span class="pill"><b>Gap de status:</b> ' + fmt(m.reasonWithoutLostFlag) + '</span>',
+        signalHtml:
+          signalCard('Motivo dominante', topReasonItem.key, fmt(topReasonItem.m.total) + ' ocorrências') +
+          signalCard('Categoria líder', topCategoryItem.key, fmt(topCategoryItem.m.total) + ' registros') +
+          signalCard('Perda sem status', fmt(m.reasonWithoutLostFlag), 'aprendizado mal registrado') +
+          signalCard('Ação prioritária', current.key, current.action),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Maior vazamento</span><strong>' + fmt(topReasonItem.m.total) + '</strong></div>' + tag('danger', topReasonItem.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>' + esc(topReasonItem.key) + ' é hoje a perda mais frequente na base filtrada.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Transformar categoria ' + esc(topCategoryItem.key) + ' em task/FCA com dono e prazo.</span></div>' +
+          '</div></div>'
+      },
+      targets: {
+        kicker: 'Run rate e forecast',
+        title: 'Quanto falta para a meta fechar sozinha',
+        copy: 'A área de metas mostra ritmo mensal, lacuna de compra e receita, além do quanto a operação precisa destravar agora.',
+        asideLabel: 'Gap principal',
+        statCards:
+          shellMetric('Proj. leads', fmt(projectedLeads), 'meta ' + fmt(targets.monthlyLeads), projectedLeads >= number(targets.monthlyLeads) ? 'up' : 'warn') +
+          shellMetric('Proj. compras', fmt(projectedPurchases), 'meta ' + fmt(targets.monthlyPurchases), projectedPurchases >= number(targets.monthlyPurchases) ? 'up' : 'danger') +
+          shellMetric('Proj. valor', money(projectedRevenue), 'meta ' + money(targets.monthlyRevenue), projectedRevenue >= number(targets.monthlyRevenue) ? 'up' : 'danger') +
+          shellMetric('ROAS lido', roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'mínimo ' + number(targets.minRoas).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'x', roas >= number(targets.minRoas) ? 'up' : 'warn'),
+        statusHtml:
+          '<span class="pill"><b>Proj. leads:</b> ' + fmt(projectedLeads) + '</span>' +
+          '<span class="pill"><b>Proj. compras:</b> ' + fmt(projectedPurchases) + '</span>' +
+          '<span class="pill"><b>Proj. valor:</b> ' + money(projectedRevenue) + '</span>' +
+          '<span class="pill"><b>Janela:</b> ' + dateRange + '</span>',
+        signalHtml:
+          signalCard('Gap de leads', fmt(Math.max(0, number(targets.monthlyLeads) - projectedLeads)), 'faltando no ritmo atual') +
+          signalCard('Gap de compras', fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)), 'faltando para bater a meta') +
+          signalCard('Gap de receita', money(Math.max(0, number(targets.monthlyRevenue) - projectedRevenue)), 'abaixo da meta') +
+          signalCard('Condição de fechamento', projectedPurchases >= number(targets.monthlyPurchases) ? 'Ritmo suficiente' : 'Restrição ainda trava', projectedPurchases >= number(targets.monthlyPurchases) ? 'proteger margem e CRM' : 'precisa task com dono'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Gap de compras</span><strong>' + fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)) + '</strong></div>' + tag(projectedPurchases >= number(targets.monthlyPurchases) ? 'ok' : 'warn', 'Meta mensal') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>' + (projectedPurchases >= number(targets.monthlyPurchases) ? 'O ritmo atual sustenta a meta de compras.' : 'A meta de compras não fecha sozinha no ritmo atual.') + '</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>' + (projectedPurchases >= number(targets.monthlyPurchases) ? 'Proteger CRM, margem e canal quente.' : 'Usar a restrição atual para decidir o próximo ajuste operacional.') + '</span></div>' +
+          '</div></div>'
+      },
+      fca: {
+        kicker: 'Execução com dono',
+        title: 'Fato, causa e ação precisam sair do discurso e virar acompanhamento',
+        copy: 'O bloco de FCA centraliza o que o gestor quer que o time execute, com status, prazo e evidência.',
+        asideLabel: 'FCA em andamento',
+        statCards:
+          shellMetric('FCAs abertos', fmt(openFcas), 'pendências em execução', openFcas > 0 ? 'warn' : 'up') +
+          shellMetric('Travados', fmt(blockedFcas), 'precisam destrave gerencial', blockedFcas > 0 ? 'danger' : 'up') +
+          shellMetric('Concluídos', fmt(doneFcas), 'histórico executado', 'up') +
+          shellMetric('Restrições sem task', fmt(Math.max(0, restriction.candidates.length - openFcas)), 'gargalos ainda sem FCA formal', 'warn'),
+        statusHtml:
+          '<span class="pill"><b>FCAs abertos:</b> ' + fmt(openFcas) + '</span>' +
+          '<span class="pill"><b>Travados:</b> ' + fmt(blockedFcas) + '</span>' +
+          '<span class="pill"><b>Concluídos:</b> ' + fmt(doneFcas) + '</span>' +
+          '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>',
+        signalHtml:
+          signalCard('FCA aberta', fcas[0] ? fcas[0].title : 'Nenhum cadastrado', fcas[0] ? fcas[0].status + ' | ' + fcas[0].owner : 'gestor ainda não registrou') +
+          signalCard('Maior trava', current.key, 'precisa virar execução') +
+          signalCard('Prazo curto', fcas[0] && fcas[0].due ? fcas[0].due : 'Sem prazo', 'campo sensível para cobrança') +
+          signalCard('Disciplina', 'V4 ON', 'toda decisão crítica vira dono, prazo e evidência'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>FCA aberta</span><strong>' + fmt(openFcas) + '</strong></div>' + tag(openFcas > 0 ? 'warn' : 'info', 'Execução') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>' + (fcas[0] ? 'O time já tem uma fila manual de execução montada no cockpit.' : 'Ainda não há FCA manual registrada; a próxima restrição precisa virar ação.') + '</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Registrar fato, causa e ação sempre que a restrição repetir por dois ciclos.</span></div>' +
+          '</div></div>'
+      },
+      handoff: {
+        kicker: 'Continuidade e contexto',
+        title: 'Quando a conta muda de mãos, o contexto não pode morrer',
+        copy: 'Handoff organiza stack, riscos, próximos 7 dias e a leitura de continuidade para a operação seguir sem ruído.',
+        asideLabel: 'Risco de continuidade',
+        statCards:
+          shellMetric('Riscos abertos', fmt(riskBlocks), 'blocos exigindo alinhamento', 'warn') +
+          shellMetric('Donos ativos', fmt(sellers.length), 'responsáveis no filtro', 'up') +
+          shellMetric('Fontes ativas', fmt(groupBy(filtered, function (row) { return row.origin; }).length), 'origens/canais detectados', 'up') +
+          shellMetric('Pipeline em aberto', fmt(openOpps), 'oportunidades sem compra', openOpps > 0 ? 'warn' : 'up'),
+        statusHtml:
+          '<span class="pill"><b>Riscos:</b> ' + fmt(riskBlocks) + '</span>' +
+          '<span class="pill"><b>Donos:</b> ' + fmt(sellers.length) + '</span>' +
+          '<span class="pill"><b>Fontes:</b> ' + fmt(groupBy(filtered, function (row) { return row.origin; }).length) + '</span>' +
+          '<span class="pill"><b>Próximos 7 dias:</b> 7 ações</span>',
+        signalHtml:
+          signalCard('Stack', 'CRM + mídia + atendimento', 'camadas já visíveis no cockpit') +
+          signalCard('Risco principal', current.key, 'trava mais sensível para continuidade') +
+          signalCard('Sem origem', fmt(m.noOrigin), 'risco de atribuição e handoff cego') +
+          signalCard('Oportunidade em aberto', fmt(openOpps), 'pedem dono e narrativa clara'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Continuidade</span><strong>' + fmt(sellers.length) + '</strong></div>' + tag('info', 'Donos ativos') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>O handoff precisa sair com stack, riscos e próximos sete dias amarrados.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Usar a restrição atual e os riscos abertos como pauta mínima de transição.</span></div>' +
+          '</div></div>'
+      },
+      status: {
+        kicker: 'Arquitetura e confiabilidade',
+        title: 'Quando o dado fica torto, o dashboard decide errado',
+        copy: 'A camada de sistema mostra confiabilidade da base, pontos de auditoria e o quanto a operação ainda está vulnerável a leitura falsa.',
+        asideLabel: 'Saúde do sistema',
+        statCards:
+          shellMetric('Health CRM', pct(m.health), fmt(issueCount) + ' alertas lidos', m.health >= 0.7 ? 'up' : 'danger') +
+          shellMetric('Base carregada', fmt(rows.length), 'Lead IDs disponíveis no runtime', 'up') +
+          shellMetric('Sem origem', fmt(m.noOrigin), 'atribuição ainda incompleta', 'danger') +
+          shellMetric('Quebras de etapa', fmt(m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp), 'fluxo fora de ordem', 'danger'),
+        statusHtml:
+          '<span class="pill"><b>Health:</b> ' + pct(m.health) + '</span>' +
+          '<span class="pill"><b>Base:</b> ' + fmt(rows.length) + '</span>' +
+          '<span class="pill"><b>Sem origem:</b> ' + fmt(m.noOrigin) + '</span>' +
+          '<span class="pill"><b>Quebras:</b> ' + fmt(m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp) + '</span>',
+        signalHtml:
+          signalCard('Base ativa', 'GrowthPack', fmt(rows.length) + ' Lead IDs') +
+          signalCard('Ponto crítico', 'Perda sem status', fmt(m.reasonWithoutLostFlag) + ' registros') +
+          signalCard('Origem vazia', fmt(m.noOrigin), 'rompe a leitura de canal') +
+          signalCard('Arquitetura', 'V4 ON', 'dados → diagnóstico → decisão → tarefa'),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Health CRM</span><strong>' + pct(m.health) + '</strong></div>' + tag(m.health >= .75 ? 'ok' : m.health >= .55 ? 'warn' : 'danger', 'Confiabilidade') + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Leitura</b><span>O maior risco do cockpit é usar dados quebrados para decidir mídia, comercial e PCP.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Auditar origem, perda, progressão de etapa e valor antes de escalar qualquer decisão.</span></div>' +
+          '</div></div>'
+      }
+    };
+
+    return contexts[activeTab] || contexts.overview;
+  }
+
+  function renderShell(m, restriction) {
+    var current = restriction.current;
+    var context = buildHeroContext(m, restriction);
 
     text('sourceLabel', 'Fonte: cache GrowthPack | ' + fmt(rows.length) + ' Lead IDs');
     text('sidebarRestriction', current.key);
     text('sidebarSupportText', current.action);
+    text('heroKicker', context.kicker);
+    text('heroTitle', context.title);
+    text('heroCopy', context.copy);
+    text('heroAsideLabel', context.asideLabel);
 
-    set('heroStatCards',
-      shellMetric('Receita registrada', money(m.value), 'Ticket médio ' + money(m.ticket), 'up') +
-      shellMetric('Compras', fmt(m.purchase), pct(m.conversion) + ' compra / lead', 'up') +
-      shellMetric('Lead IDs', fmt(m.total), fmt(m.mql) + ' MQL | ' + fmt(m.sql) + ' SQL', m.total >= 1000 ? 'warn' : 'up') +
-      shellMetric('Health CRM', pct(m.health), fmt(m.dataIssues) + ' pontos de auditoria', m.health >= 0.7 ? 'up' : 'danger')
-    );
-
-    set('statusLine',
-      '<span class="pill"><b>Leads:</b> ' + fmt(m.total) + '</span>' +
-      '<span class="pill"><b>Compras:</b> ' + fmt(m.purchase) + ' (' + pct(m.conversion) + ')</span>' +
-      '<span class="pill"><b>Valor:</b> ' + money(m.value) + '</span>' +
-      '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>' +
-      '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>'
-    );
-
-    set('heroSignalGrid',
-      signalCard('Janela ativa', dateRange, fmt(days) + ' dias úteis no filtro') +
-      signalCard('Pipeline aberto', fmt(openOpps), 'oportunidades sem compra') +
-      signalCard('Perdas mapeadas', fmt(m.loss), pct(m.lossRate) + ' dos leads filtrados') +
-      signalCard('Modo operacional', 'V4 ON', 'dados → diagnóstico → decisão → tarefa')
-    );
-
-    set('heroRestrictionCard',
-      '<div class="restriction-hero">' +
-      '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + Math.round(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
-      '<div class="compact-grid">' +
-      '<div class="rule-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
-      '<div class="rule-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
-      '</div></div>'
-    );
-
+    set('heroStatCards', context.statCards);
+    set('statusLine', context.statusHtml);
+    set('heroSignalGrid', context.signalHtml);
+    set('heroRestrictionCard', context.asideHtml);
     set('heroMiniStatus',
       '<div><b>' + fmt(m.loss) + '</b><span>motivos</span></div>' +
       '<div><b>' + fmt(m.noOrigin) + '</b><span>sem origem</span></div>' +
@@ -1304,6 +1673,7 @@
         var panel = $(activeTab);
         if (panel) panel.classList.add('active');
         updateWorkspaceHead();
+        renderAll();
       });
     });
 
@@ -1447,6 +1817,7 @@
         var panel = $(activeTab);
         if (panel) panel.classList.add('active');
         updateWorkspaceHead();
+        renderAll();
       });
     });
 
