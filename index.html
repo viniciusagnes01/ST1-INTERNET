@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ST1 Internet | GrowthPack Command Center</title>
-  <meta name="description" content="Dashboard V4 ON para GrowthPack ST1 Internet: Geral, Mídia, CRM e Meta & FCA." />
+  <meta name="description" content="Dashboard V4 ON para GrowthPack ST1 Internet: Geral, Midia, CRM e Meta & FCA." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/styles.css?v=20260618-004" />
+  <link rel="stylesheet" href="./assets/css/styles.css?v=20260618-007" />
 </head>
 <body>
   <div id="scrollProgress"></div>
@@ -23,19 +23,17 @@
         <img src="./assets/img/st1-logo.svg" alt="ST1 Internet" />
         <div class="brand-copy">
           <strong>GrowthPack Command Center</strong>
-          <span>V4 ON · ST1 Internet</span>
+          <span>V4 ON - ST1 Internet</span>
         </div>
       </div>
-
       <nav class="nav-tabs" aria-label="Abas do dashboard">
         <button class="tab-btn active" data-tab="geral">1. Geral</button>
-        <button class="tab-btn" data-tab="midia">2. Mídia</button>
+        <button class="tab-btn" data-tab="midia">2. Midia</button>
         <button class="tab-btn" data-tab="crm">3. CRM Comercial</button>
         <button class="tab-btn" data-tab="meta">4. Meta & FCA</button>
       </nav>
-
       <div class="top-actions">
-        <button class="action-btn" id="motionToggle">Animações ON</button>
+        <button class="action-btn" id="motionToggle">Animacoes ON</button>
         <button class="action-btn" id="refreshData">Atualizar dados</button>
         <button class="action-btn primary" onclick="window.print()">Exportar PDF</button>
       </div>
@@ -44,21 +42,17 @@
     <section class="hero">
       <article class="glass hero-card reveal">
         <div>
-          <div class="eyebrow"><span class="pulse"></span> Painel de comando comercial · GrowthPack</div>
+          <div class="eyebrow"><span class="pulse"></span> Painel de comando comercial - GrowthPack</div>
           <h1>ST1 <span class="gradient-text">Command Center</span></h1>
-          <p>
-            Sistema de dashboard V4 ON para acompanhar o funil comercial, mídia, CRM, metas e FCAs com filtros por data,
-            origem, vendedora, etapa e motivo de perda. O topo do funil usa Lead ID único como fonte real, não a tag LEAD.
-          </p>
+          <p>Sistema V4 ON para acompanhar funil comercial, midia, CRM, metas e FCAs com filtros por data, origem, vendedora, etapa e motivo de perda. O topo do funil usa Lead ID unico como fonte real, nao a tag LEAD.</p>
           <div class="status-row">
             <span class="status-pill"><strong id="sourceStatus">Fonte: carregando</strong></span>
-            <span class="status-pill">Período: <strong id="periodStatus">--</strong></span>
+            <span class="status-pill">Periodo: <strong id="periodStatus">--</strong></span>
             <span class="status-pill">Base filtrada: <strong id="recordStatus">--</strong></span>
             <span class="status-pill" id="globalHealth"><strong>--</strong></span>
           </div>
         </div>
       </article>
-
       <aside class="glass command-card reveal">
         <div class="command-top">
           <div class="window-dots"><span></span><span></span><span></span></div>
@@ -81,163 +75,57 @@
         </div>
       </div>
       <div class="filter-grid">
-        <div class="filter-field">
-          <label for="startDate">Data inicial</label>
-          <input type="date" id="startDate" />
-        </div>
-        <div class="filter-field">
-          <label for="endDate">Data final</label>
-          <input type="date" id="endDate" />
-        </div>
-        <div class="filter-field">
-          <label for="sellerFilter">Vendedora</label>
-          <select id="sellerFilter"></select>
-        </div>
-        <div class="filter-field">
-          <label for="originFilter">Origem</label>
-          <select id="originFilter"></select>
-        </div>
-        <div class="filter-field">
-          <label for="reasonFilter">Motivo de perda</label>
-          <select id="reasonFilter"></select>
-        </div>
-        <div class="filter-field">
-          <label for="stageFilter">Etapa</label>
-          <select id="stageFilter">
-            <option value="all">Todas as etapas</option>
-            <option value="mql">MQL</option>
-            <option value="sql">SQL</option>
-            <option value="opportunity">Oportunidade</option>
-            <option value="purchase">Compra</option>
-            <option value="lostReason">Com motivo de perda</option>
-          </select>
-        </div>
+        <div class="filter-field"><label for="startDate">Data inicial</label><input type="date" id="startDate" /></div>
+        <div class="filter-field"><label for="endDate">Data final</label><input type="date" id="endDate" /></div>
+        <div class="filter-field"><label for="sellerFilter">Vendedora</label><select id="sellerFilter"></select></div>
+        <div class="filter-field"><label for="originFilter">Origem</label><select id="originFilter"></select></div>
+        <div class="filter-field"><label for="reasonFilter">Motivo de perda</label><select id="reasonFilter"></select></div>
+        <div class="filter-field"><label for="stageFilter">Etapa</label><select id="stageFilter"><option value="all">Todas as etapas</option><option value="mql">MQL</option><option value="sql">SQL</option><option value="opportunity">Oportunidade</option><option value="purchase">Compra</option><option value="lostReason">Com motivo de perda</option></select></div>
       </div>
     </section>
 
     <main>
       <section class="panel active" id="panel-geral">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow"><span class="pulse"></span> Aba Geral</div>
-            <h2>Visão executiva do processo comercial</h2>
-            <p>Resumo do funil, ritmo diário, conversão, valor, perda operacional e principais alertas da GrowthPack.</p>
-          </div>
-        </div>
+        <div class="section-head"><div><div class="eyebrow"><span class="pulse"></span> Aba Geral</div><h2>Visao executiva do processo comercial</h2><p>Resumo do funil, ritmo diario, conversao, valor, perda operacional e principais alertas da GrowthPack.</p></div></div>
         <div class="kpi-grid" id="geralKpis"></div>
-        <div class="grid-2" style="margin-top:16px;">
-          <article class="glass data-card reveal">
-            <h3>Leads e compras por dia</h3>
-            <div class="chart" id="dailyChart"></div>
-          </article>
-          <article class="glass data-card reveal">
-            <h3>Funil consolidado</h3>
-            <div id="funnelOverview"></div>
-          </article>
-        </div>
+        <div class="grid-2" style="margin-top:16px;"><article class="glass data-card reveal"><h3>Leads e compras por dia</h3><div class="chart" id="dailyChart"></div></article><article class="glass data-card reveal"><h3>Funil consolidado</h3><div id="funnelOverview"></div></article></div>
         <div class="grid-3" id="generalInsights" style="margin-top:16px;"></div>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Panorama diário detalhado</h3>
-          <div class="table-wrap" id="dailyTable"></div>
-        </article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Panorama diario detalhado</h3><div class="table-wrap" id="dailyTable"></div></article>
       </section>
 
       <section class="panel" id="panel-midia">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow"><span class="pulse"></span> Aba Mídia</div>
-            <h2>Origem, qualidade e aproveitamento comercial</h2>
-            <p>Leitura por Meta Ads, Google Ads, Meta + Google e registros sem origem marcada.</p>
-          </div>
-        </div>
+        <div class="section-head"><div><div class="eyebrow"><span class="pulse"></span> Aba Midia</div><h2>Origem, qualidade e aproveitamento comercial</h2><p>Leitura por Meta Ads, Google Ads, Meta + Google e registros sem origem marcada.</p></div></div>
         <div class="kpi-grid" id="midiaKpis"></div>
-        <div class="grid-2" style="margin-top:16px;">
-          <article class="glass data-card reveal">
-            <h3>Volume por origem</h3>
-            <div id="originChart"></div>
-          </article>
-          <article class="glass data-card reveal">
-            <h3>Conversão por origem</h3>
-            <div id="originConversionChart"></div>
-          </article>
-        </div>
+        <div class="grid-2" style="margin-top:16px;"><article class="glass data-card reveal"><h3>Volume por origem</h3><div id="originChart"></div></article><article class="glass data-card reveal"><h3>Conversao por origem</h3><div id="originConversionChart"></div></article></div>
         <div class="grid-3" id="midiaInsights" style="margin-top:16px;"></div>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Matriz de origem</h3>
-          <div class="table-wrap" id="originTable"></div>
-        </article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Matriz de origem</h3><div class="table-wrap" id="originTable"></div></article>
       </section>
 
       <section class="panel" id="panel-crm">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow"><span class="pulse"></span> Aba CRM Comercial</div>
-            <h2>Funil, vendedoras, perdas e inconsistências</h2>
-            <p>Tudo que é possível em relação ao comercial: topo por Lead ID, progressão por etapa, gargalos e qualidade da marcação.</p>
-          </div>
-        </div>
+        <div class="section-head"><div><div class="eyebrow"><span class="pulse"></span> Aba CRM Comercial</div><h2>Funil, vendedoras, perdas e inconsistencias</h2><p>Topo por Lead ID, progressao por etapa, gargalos e qualidade da marcacao.</p></div></div>
         <div class="kpi-grid" id="crmKpis"></div>
         <div class="seller-grid" id="sellerCards" style="margin-top:16px;"></div>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Funil por vendedora · Lead ID booleano</h3>
-          <div class="table-wrap" id="sellerFunnelTable"></div>
-        </article>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Perda de etapa por vendedora</h3>
-          <div class="table-wrap" id="stageLossTable"></div>
-        </article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Funil por vendedora - Lead ID booleano</h3><div class="table-wrap" id="sellerFunnelTable"></div></article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Perda de etapa por vendedora</h3><div class="table-wrap" id="stageLossTable"></div></article>
         <div class="grid-3" id="crmIssues" style="margin-top:16px;"></div>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Motivos de perda por vendedora</h3>
-          <div class="table-wrap" id="reasonSellerTable"></div>
-        </article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Motivos de perda por vendedora</h3><div class="table-wrap" id="reasonSellerTable"></div></article>
       </section>
 
       <section class="panel" id="panel-meta">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow"><span class="pulse"></span> Meta & FCA</div>
-            <h2>Metas, riscos e planos de ação</h2>
-            <p>Controle de metas configuráveis, Health operacional, FCAs automáticos e matriz de automação V4 ON.</p>
-          </div>
-        </div>
+        <div class="section-head"><div><div class="eyebrow"><span class="pulse"></span> Meta & FCA</div><h2>Metas, riscos e planos de acao</h2><p>Controle de metas configuraveis, Health operacional, FCAs automaticos e matriz de automacao V4 ON.</p></div></div>
         <div class="goal-grid" id="targetInputs"></div>
         <div class="kpi-grid" id="goalCards" style="margin-top:16px;"></div>
         <div class="fca-grid" id="fcaCards" style="margin-top:16px;"></div>
-        <article class="glass data-card reveal" style="margin-top:16px;">
-          <h3>Matriz V4 ON de automação e governança</h3>
-          <div class="table-wrap" id="automationMatrix"></div>
-        </article>
+        <article class="glass data-card reveal" style="margin-top:16px;"><h3>Matriz V4 ON de automacao e governanca</h3><div class="table-wrap" id="automationMatrix"></div></article>
       </section>
     </main>
 
-    <footer class="footer">
-      <div class="footer-grid">
-        <div>
-          <strong>ST1 Internet | GrowthPack Command Center</strong><br>
-          Projeto estático pronto para GitHub Pages, com fallback local e camada de integração dinâmica com Google Sheets/Apps Script.
-        </div>
-        <div>
-          <strong>Modo V4 ON:</strong> Cliente → Dados → Diagnóstico → Decisão → Tarefa → Follow-up → Risco/FCA → Melhoria contínua.
-          Toda divergência relevante deve virar tarefa, atualização de CRM, FCA ou decisão de melhoria.
-        </div>
-      </div>
-    </footer>
+    <footer class="footer"><div class="footer-grid"><div><strong>ST1 Internet | GrowthPack Command Center</strong><br>Projeto estatico pronto para Vercel/GitHub Pages, com fallback local e camada de integracao dinamica.</div><div><strong>Modo V4 ON:</strong> Cliente -> Dados -> Diagnostico -> Decisao -> Tarefa -> Follow-up -> Risco/FCA -> Melhoria continua.</div></div></footer>
   </div>
 
   <div class="toast" id="toast"></div>
-
-  <script src="./config/dashboard.config.js?v=20260618-004"></script>
-  <script src="./assets/js/data-cache.js?v=20260618-004"></script>
-  <script src="./assets/js/app.js?v=20260618-004"></script>
-  <script>
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (!window.ST1Dashboard) {
-          document.body.insertAdjacentHTML('afterbegin', '<div style="position:fixed;z-index:99999;left:12px;right:12px;top:12px;padding:16px;border-radius:16px;background:#ff426d;color:white;font-family:Inter,Arial,sans-serif;font-weight:900;box-shadow:0 20px 80px rgba(0,0,0,.45)">Falha ao inicializar o dashboard: o app.js não criou window.ST1Dashboard. Abra o console para ver o erro do JavaScript.</div>');
-        }
-      }, 1200);
-    });
-  </script>
+  <script src="./config/dashboard.config.js?v=20260618-007"></script>
+  <script src="./assets/js/data-cache.js?v=20260618-007"></script>
+  <script src="./assets/js/app.js?v=20260618-007"></script>
 </body>
 </html>
