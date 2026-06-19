@@ -19,7 +19,11 @@
     monthlyLeads: 2800,
     monthlyPurchases: 680,
     monthlyRevenue: 76000,
-    minConversionRate: 0.25
+    minConversionRate: 0.25,
+    metaInvestment: 10000,
+    googleInvestment: 8000,
+    minRoas: 3,
+    sellerDailyCapacity: 18
   };
 
   function $(id) { return document.getElementById(id); }
@@ -292,6 +296,127 @@
     });
   }
 
+  function countWhere(list, predicate) {
+    return list.filter(predicate).length;
+  }
+
+  function reasonCount(list, text) {
+    var needle = text.toLowerCase();
+    return countWhere(list, function (row) {
+      return String(row.lossReason || '').toLowerCase().indexOf(needle) >= 0;
+    });
+  }
+
+  function categoryCount(list, text) {
+    var needle = text.toLowerCase();
+    return countWhere(list, function (row) {
+      return String(row.reasonCategory || '').toLowerCase().indexOf(needle) >= 0;
+    });
+  }
+
+  function stageModel(m) {
+    var proposal = Math.max(m.purchase, Math.round(m.opportunity * .92));
+    var negotiation = Math.max(m.purchase, Math.round(m.opportunity * .72));
+    return [
+      { key: 'Lead', count: m.total, next: m.leadTag || m.mql, owner: 'Marketing / Bot', sla: 'Imediato' },
+      { key: 'Conexão', count: m.leadTag || m.mql, next: m.mql, owner: 'SDR / Comercial', sla: '15min a 1h' },
+      { key: 'MQL', count: m.mql, next: m.sql, owner: 'SDR', sla: '24h' },
+      { key: 'SQL', count: m.sql, next: m.opportunity, owner: 'SDR / Closer', sla: '48h' },
+      { key: 'Oportunidade', count: m.opportunity, next: proposal, owner: 'Comercial', sla: 'D0/D1' },
+      { key: 'Proposta', count: proposal, next: negotiation, owner: 'Closer', sla: 'D0/D1/D3' },
+      { key: 'Negociação', count: negotiation, next: m.purchase, owner: 'Comercial', sla: 'Ciclo alvo' },
+      { key: 'Venda', count: m.purchase, next: m.purchase, owner: 'Comercial / CS', sla: 'Imediato' }
+    ].map(function (stage, index) {
+      var wip = Math.max(0, stage.count - stage.next);
+      stage.wip = wip;
+      stage.loss = div(wip, stage.count);
+      stage.aging = index <= 1 ? (wip > stage.count * .28 ? 'alto' : 'baixo') : (wip > stage.count * .35 ? 'crítico' : wip > stage.count * .18 ? 'atenção' : 'ok');
+      return stage;
+    });
+  }
+
+  function restrictionEngine(list, m) {
+    var meta = metrics(list.filter(function (row) { return row.origin === 'Meta Ads'; }));
+    var google = metrics(list.filter(function (row) { return row.origin === 'Google Ads'; }));
+    var stageBreaks = m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp;
+    var infrastructure = categoryCount(list, 'infraestrutura');
+    var commercialPriority = reasonCount(list, 'falta de interesse') + reasonCount(list, 'prioridade');
+    var nonCommercial = reasonCount(list, 'atendimento');
+    var price = categoryCount(list, 'preço');
+    var stageWip = stageModel(m).sort(function (a, b) { return b.wip - a.wip; })[0] || { key: 'Sem gargalo', wip: 0 };
+    var metaGap = Math.max(0, google.conversion - meta.conversion);
+    var candidates = [
+      {
+        key: 'CRM / governança',
+        score: div(m.noOrigin + m.reasonWithoutLostFlag + stageBreaks, Math.max(1, m.total)) * 100,
+        evidence: fmt(m.noOrigin) + ' sem origem, ' + fmt(m.reasonWithoutLostFlag) + ' perdas sem flag e ' + fmt(stageBreaks) + ' quebras de etapa.',
+        impact: 'Decisão de mídia, produtividade e perda ficam distorcidas.',
+        action: 'Obrigar origem, motivo/status de perda e progressão mínima de etapa.',
+        owner: 'CRM / Sales Ops',
+        due: '48h',
+        kind: 'danger'
+      },
+      {
+        key: 'Qualidade de mídia',
+        score: (div(meta.total, Math.max(1, m.total)) * metaGap * 220) + (div(m.noOrigin, Math.max(1, m.total)) * 35),
+        evidence: 'Meta converte ' + pct(meta.conversion) + ', Google converte ' + pct(google.conversion) + ' e origem vazia impede CAC real.',
+        impact: 'Time comercial recebe volume sem clareza de qualidade ou promessa.',
+        action: 'Separar canal por qualidade comercial, motivo de perda e cobertura.',
+        owner: 'Mídia + Comercial',
+        due: '72h',
+        kind: 'warn'
+      },
+      {
+        key: 'Comercial / prioridade',
+        score: div(commercialPriority + nonCommercial, Math.max(1, m.total)) * 120,
+        evidence: fmt(commercialPriority) + ' perdas por prioridade/interesse e ' + fmt(nonCommercial) + ' por atendimento não comercial.',
+        impact: 'Lead entra, mas não avança por urgência, script, qualificação ou follow-up.',
+        action: 'Aplicar régua D0-D3, qualificação clara e script de objeções.',
+        owner: 'Coordenação comercial',
+        due: '7 dias',
+        kind: 'warn'
+      },
+      {
+        key: 'Infraestrutura / cobertura',
+        score: div(infrastructure, Math.max(1, m.total)) * 140,
+        evidence: fmt(infrastructure) + ' perdas ligadas a rede, viabilidade, CTO ou condomínio.',
+        impact: 'Vendedora perde tempo com lead que talvez nunca deveria entrar na fila.',
+        action: 'Pré-check de cobertura antes da distribuição humana.',
+        owner: 'Operação + CRM',
+        due: '7 dias',
+        kind: 'danger'
+      },
+      {
+        key: 'PCP / WIP em ' + stageWip.key,
+        score: div(stageWip.wip, Math.max(1, m.total)) * 110,
+        evidence: fmt(stageWip.wip) + ' registros acumulados na etapa ' + stageWip.key + '.',
+        impact: 'Fluxo perde velocidade e envelhece na fila.',
+        action: 'Definir capacidade diária, fila quente e SLA por etapa.',
+        owner: 'Gestão comercial',
+        due: '24h',
+        kind: 'info'
+      },
+      {
+        key: 'Preço / condição / oferta',
+        score: div(price, Math.max(1, m.total)) * 95,
+        evidence: fmt(price) + ' perdas classificadas como preço, orçamento, kitnet ou condição.',
+        impact: 'Oferta pode estar desalinhada com expectativa, renda ou promessa.',
+        action: 'Revisar comunicação de valor, condições e objeções por segmento.',
+        owner: 'Comercial + Estratégia',
+        due: '7 dias',
+        kind: 'warn'
+      }
+    ];
+    candidates.sort(function (a, b) { return b.score - a.score; });
+    return { current: candidates[0], candidates: candidates };
+  }
+
+  function healthKind(value) {
+    if (value >= .75) return 'ok';
+    if (value >= .55) return 'warn';
+    return 'danger';
+  }
+
   function kpi(label, value, sub) {
     return '<article class="glass kpi"><span class="kpi-label">' + esc(label) + '</span><span class="kpi-value">' + value + '</span><span class="kpi-sub">' + sub + '</span></article>';
   }
@@ -349,23 +474,24 @@
     try { localStorage.setItem('st1ManualFcas', JSON.stringify(items)); } catch (error) {}
   }
 
-  function renderShell(m) {
+  function renderShell(m, restriction) {
     text('sourceLabel', 'Fonte: cache GrowthPack | ' + fmt(rows.length) + ' Lead IDs');
     set('statusLine',
       '<span class="pill"><b>Leads:</b> ' + fmt(m.total) + '</span>' +
       '<span class="pill"><b>Compras:</b> ' + fmt(m.purchase) + ' (' + pct(m.conversion) + ')</span>' +
       '<span class="pill"><b>Valor:</b> ' + money(m.value) + '</span>' +
-      '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>'
+      '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>' +
+      '<span class="pill"><b>Restrição:</b> ' + esc(restriction.current.key) + '</span>'
     );
     set('heroMiniStatus',
       '<div><b>' + fmt(m.loss) + '</b><span>motivos</span></div>' +
       '<div><b>' + fmt(m.noOrigin) + '</b><span>sem origem</span></div>' +
       '<div><b>' + money(m.ticket) + '</b><span>ticket</span></div>' +
-      '<div><b>' + fmt(m.dataIssues) + '</b><span>alertas</span></div>'
+      '<div><b>' + Math.round(restriction.current.score) + '</b><span>score restrição</span></div>'
     );
   }
 
-  function renderOverview(m) {
+  function renderOverview(m, restriction) {
     set('globalKpis',
       kpi('Lead IDs', fmt(m.total), fmt(m.leadTag) + ' com tag LEAD') +
       kpi('Compras', fmt(m.purchase), pct(m.conversion) + ' compra / lead') +
@@ -393,8 +519,8 @@
     var metaShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).total);
     var googleShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).total);
     set('executiveInsights',
+      insight(restriction.current.kind, 'Restrição atual: ' + restriction.current.key, restriction.current.evidence + ' Próxima ação: ' + restriction.current.action) +
       insight('danger', 'CRM de perda precisa ser governado', fmt(m.reasonWithoutLostFlag) + ' registros têm motivo de perda sem a flag LEAD PERDIDO.') +
-      insight('warn', 'Origem ainda limita decisão de mídia', fmt(m.noOrigin) + ' leads estão sem origem marcada no filtro atual.') +
       insight('info', 'Google supera Meta em intenção', 'Google Ads converte ' + pct(googleShare) + ' contra ' + pct(metaShare) + ' em Meta Ads no filtro.')
     );
 
@@ -404,6 +530,120 @@
         return [row.date, esc(row.leadId), esc(row.seller), esc(row.origin), row.mql ? 'Sim' : '-', row.sql ? 'Sim' : '-', row.opportunity ? 'Sim' : '-', row.purchase ? 'Sim' : '-', esc(row.lossReason || '-'), money(row.value)];
       })
     ));
+  }
+
+  function renderRestriction(m, restriction) {
+    var current = restriction.current;
+    set('restrictionKpis',
+      kpi('Restrição atual', esc(current.key), 'score ' + Math.round(current.score)) +
+      kpi('Impacto estimado', fmt(m.dataIssues), 'pontos de fricção no filtro') +
+      kpi('Perda operacional', fmt(m.loss), pct(m.lossRate) + ' dos leads') +
+      kpi('Health CRM', pct(m.health), current.owner)
+    );
+
+    set('currentRestriction',
+      '<div class="restriction-hero">' +
+      '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + Math.round(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
+      '<div class="decision-grid">' +
+      '<div class="decision-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
+      '<div class="decision-item"><b>Impacto</b><span>' + esc(current.impact) + '</span></div>' +
+      '<div class="decision-item"><b>Ação</b><span>' + esc(current.action) + '</span></div>' +
+      '<div class="decision-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
+      '</div></div>'
+    );
+
+    set('tocSteps',
+      '<div class="toc-list">' +
+      '<div class="toc-step"><div><b>Identificar</b><span>' + esc(current.key) + ' é a restrição dominante do filtro atual.</span></div></div>' +
+      '<div class="toc-step"><div><b>Explorar</b><span>Usar o que já existe: SLA, campos obrigatórios, fila quente e follow-up.</span></div></div>' +
+      '<div class="toc-step"><div><b>Subordinar</b><span>Priorizar tarefas e mídia em volta da restrição, não de métricas locais.</span></div></div>' +
+      '<div class="toc-step"><div><b>Elevar</b><span>Se continuar travando, adicionar automação, capacidade ou ajuste de oferta.</span></div></div>' +
+      '<div class="toc-step"><div><b>Repetir</b><span>Quando destravar, o painel recalcula o próximo gargalo.</span></div></div>' +
+      '</div>'
+    );
+
+    set('restrictionMatrix', table(
+      ['Restrição possível', 'Score', 'Evidência', 'Ação V4 ON', 'Dono'],
+      restriction.candidates.map(function (item) {
+        return [esc(item.key), fmt(item.score), esc(item.evidence), esc(item.action), esc(item.owner)];
+      })
+    ));
+
+    var leaks = stageModel(m).filter(function (stage) { return stage.key !== 'Venda'; });
+    set('revenueLeakTable', table(
+      ['Ponto do fluxo', 'Entrada', 'Saída', 'WIP / vazamento', 'Peso', 'Ação'],
+      leaks.map(function (stage) {
+        return [
+          esc(stage.key),
+          fmt(stage.count),
+          fmt(stage.next),
+          fmt(stage.wip),
+          pct(stage.loss),
+          stage.wip > 0 ? 'Reduzir fila e definir próximo passo' : 'Manter fluxo'
+        ];
+      })
+    ));
+  }
+
+  function renderPcp(m) {
+    var days = daysInSelection(filtered);
+    var targets = getTargets();
+    var stages = stageModel(m);
+    var topStage = stages.slice().sort(function (a, b) { return b.wip - a.wip; })[0] || stages[0];
+    var sellers = groupBy(filtered, function (row) { return row.seller; }).sort(function (a, b) { return b.m.total - a.m.total; });
+    var capacityTotal = sellers.length * targets.sellerDailyCapacity * days;
+    var overloaded = sellers.filter(function (seller) {
+      return div(seller.m.total, days) > targets.sellerDailyCapacity;
+    }).length;
+
+    set('pcpKpis',
+      kpi('WIP crítico', esc(topStage.key), fmt(topStage.wip) + ' registros acumulados') +
+      kpi('Capacidade planejada', fmt(capacityTotal), fmt(targets.sellerDailyCapacity) + ' leads/vendedora/dia') +
+      kpi('Sobrecarga', fmt(overloaded), 'vendedoras acima da capacidade') +
+      kpi('Aging do gargalo', esc(topStage.aging), 'etapa ' + esc(topStage.key))
+    );
+
+    set('stageWipTable', table(
+      ['Etapa', 'Entradas', 'Saídas', 'WIP', 'Aging', 'SLA', 'Dono', 'Restrição?'],
+      stages.map(function (stage) {
+        var kind = stage.wip === topStage.wip && stage.wip > 0 ? 'Sim' : 'Não';
+        return [esc(stage.key), fmt(stage.count), fmt(stage.next), fmt(stage.wip), esc(stage.aging), esc(stage.sla), esc(stage.owner), kind];
+      })
+    ));
+
+    set('sellerCapacityTable', table(
+      ['Vendedora', 'Leads/dia', 'Capacidade/dia', 'Uso', 'WIP comercial', 'Prioridade'],
+      sellers.map(function (seller) {
+        var daily = div(seller.m.total, days);
+        var usage = div(daily, targets.sellerDailyCapacity);
+        var wip = Math.max(0, seller.m.opportunity - seller.m.purchase);
+        return [
+          esc(seller.key),
+          fmt(daily),
+          fmt(targets.sellerDailyCapacity),
+          pct(usage),
+          fmt(wip),
+          usage > 1 ? 'Redistribuir fila' : wip > 15 ? 'Follow-up de oportunidades' : 'Manter ritmo'
+        ];
+      })
+    ));
+
+    set('priorityQueueTable', table(
+      ['Prioridade', 'Fila', 'Critério', 'Volume', 'Ação de hoje'],
+      [
+        ['P0', 'Oportunidade sem compra', 'OPP - compras', fmt(Math.max(0, m.opportunity - m.purchase)), 'Follow-up D0/D1/D3 com dono'],
+        ['P0', 'Perda sem status', 'Motivo preenchido sem LEAD PERDIDO', fmt(m.reasonWithoutLostFlag), 'Corrigir CRM antes do check-in'],
+        ['P1', 'Leads sem origem', 'Origem vazia', fmt(m.noOrigin), 'Obrigar UTM/origem na entrada'],
+        ['P1', 'SQL sem MQL', 'Etapa fora de ordem', fmt(m.sqlWithoutMql), 'Auditar marcação da jornada'],
+        ['P2', 'Valor sem compra', 'Valor preenchido sem venda', fmt(m.valueWithoutPurchase), 'Separar potencial de receita realizada']
+      ]
+    ));
+
+    set('pcpInsights',
+      insight('info', 'Capacidade é regra do jogo', 'O PCP comercial mostra se o volume que entra cabe no time antes de cobrar conversão individual.') +
+      insight(topStage.wip > 100 ? 'danger' : 'warn', 'WIP muda a prioridade', 'A etapa com mais acúmulo hoje é ' + topStage.key + ', com ' + fmt(topStage.wip) + ' registros.') +
+      insight('ok', 'Fila quente primeiro', 'Oportunidade aberta e compra sem progressão viram prioridade antes de novas otimizações locais.')
+    );
   }
 
   function renderCommercial(m) {
@@ -504,6 +744,110 @@
     );
   }
 
+  function renderService(m) {
+    var conversations = m.total;
+    var qualified = m.mql;
+    var human = m.sql;
+    var abandoned = reasonCount(filtered, 'falta de interesse') + reasonCount(filtered, 'atendimento');
+    var outsideHours = countWhere(filtered, function (row) {
+      var day = new Date(row.date + 'T00:00:00').getDay();
+      return day === 0 || day === 6;
+    });
+    var slaRisk = m.noOrigin + abandoned + Math.max(0, m.total - m.leadTag);
+
+    set('serviceKpis',
+      kpi('Conversas / leads', fmt(conversations), 'entrada operacional') +
+      kpi('Qualificados', fmt(qualified), pct(div(qualified, conversations)) + ' viram MQL') +
+      kpi('Transbordo humano', fmt(human), pct(div(human, conversations)) + ' chegam em SQL') +
+      kpi('Risco SLA', fmt(slaRisk), 'inferido por dados incompletos e abandono')
+    );
+
+    var max = Math.max(conversations, qualified, human, 1);
+    set('botFlow',
+      '<div class="flow-grid">' +
+      '<div class="flow-step"><b>Entrada</b><span>Form, WhatsApp, mídia ou indicação</span><strong>' + fmt(conversations) + '</strong></div>' +
+      '<div class="flow-step"><b>Bot / triagem</b><span>Coleta interesse, região e urgência</span><strong>' + fmt(m.leadTag) + '</strong></div>' +
+      '<div class="flow-step"><b>MQL</b><span>Perfil mínimo validado</span><strong>' + fmt(qualified) + '</strong></div>' +
+      '<div class="flow-step"><b>Humano</b><span>Transbordo para comercial</span><strong>' + fmt(human) + '</strong></div>' +
+      '<div class="flow-step"><b>Compra</b><span>Venda registrada</span><strong>' + fmt(m.purchase) + '</strong></div>' +
+      '</div><div class="bar-list" style="margin-top:14px">' +
+      bar('Entrada', conversations, max, fmt(conversations)) +
+      bar('Qualificados', qualified, max, fmt(qualified)) +
+      bar('Humano', human, max, fmt(human)) +
+      bar('Compras', m.purchase, max, fmt(m.purchase)) +
+      '</div>'
+    );
+
+    set('slaTable', table(
+      ['Sinal', 'Volume', 'Leitura', 'Ação'],
+      [
+        ['Mensagens fora do horário', fmt(outsideHours), 'Entradas em sábado/domingo precisam de cobertura ou régua.', 'Bot com promessa clara + alerta de retomada'],
+        ['Atendimento não comercial', fmt(reasonCount(filtered, 'atendimento')), 'Lead desviou para demanda que não deveria consumir vendedor.', 'Fila separada por atendimento/suporte'],
+        ['Falta de interesse/prioridade', fmt(reasonCount(filtered, 'falta de interesse') + reasonCount(filtered, 'prioridade')), 'Sinal de urgência baixa, promessa fraca ou follow-up insuficiente.', 'Régua D0-D3 com prova social'],
+        ['Sem tag LEAD', fmt(Math.max(0, m.total - m.leadTag)), 'Entrada não marcada compromete automação e histórico.', 'Tag automática no nascimento do lead'],
+        ['Sem origem', fmt(m.noOrigin), 'Bot/CRM não guardou canal ou campanha.', 'Origem obrigatória antes de distribuir']
+      ]
+    ));
+
+    set('servicePlaybook', table(
+      ['Momento', 'Campo obrigatório', 'Regra', 'Automação recomendada'],
+      [
+        ['Entrada', 'Origem, campanha, canal', 'Sem origem não entra no diagnóstico de mídia.', 'Validar UTM/lead source'],
+        ['Triagem', 'Produto, região, urgência', 'Lead sem fit sai da fila comercial padrão.', 'Bot qualifica antes do humano'],
+        ['Transbordo', 'Dono e SLA', 'Todo lead humano precisa de responsável.', 'Alerta se passar do SLA'],
+        ['Follow-up', 'Próxima ação e data', 'Sem próxima ação vira risco.', 'Tarefa D0/D1/D3'],
+        ['Fechamento', 'Compra ou motivo de perda', 'Perda sem motivo não ensina o sistema.', 'Campo obrigatório ao perder']
+      ]
+    ));
+  }
+
+  function renderRetention(m) {
+    var promoters = Math.round(m.purchase * .42);
+    var neutral = Math.round(m.purchase * .36);
+    var detractors = Math.max(0, m.purchase - promoters - neutral);
+    var inactive = Math.max(0, m.loss - m.purchase);
+    var expansion = Math.round(m.purchase * .18);
+
+    set('retentionKpis',
+      kpi('Base vendida', fmt(m.purchase), 'clientes para pós-venda') +
+      kpi('Promotores estimados', fmt(promoters), 'modelo pronto para CSAT') +
+      kpi('Detratores estimados', fmt(detractors), 'fila de recuperação') +
+      kpi('Expansão potencial', fmt(expansion), 'upsell, indicação e recompra')
+    );
+
+    var max = Math.max(promoters, neutral, detractors, inactive, 1);
+    set('csatSegments',
+      '<div class="bar-list">' +
+      bar('Promotores', promoters, max, fmt(promoters) + ' | pedir depoimento') +
+      bar('Neutros', neutral, max, fmt(neutral) + ' | nutrir valor') +
+      bar('Detratores', detractors, max, fmt(detractors) + ' | recuperar') +
+      bar('Inativos/perdidos', inactive, max, fmt(inactive) + ' | reativar') +
+      '</div>'
+    );
+
+    set('relationshipRules', table(
+      ['Grupo', 'Gatilho', 'Próxima ação', 'Automação'],
+      [
+        ['Promotor', 'CSAT 4-5 / compra satisfeita', 'Pedir depoimento, indicação e upgrade.', 'Mensagem pós-instalação + link de review'],
+        ['Neutro', 'CSAT 3 / sem entusiasmo', 'Entender objeção e reforçar valor.', 'Pesquisa curta + tarefa para CS'],
+        ['Detrator', 'CSAT 1-2 / reclamação', 'Pedido de desculpas, correção e acompanhamento.', 'Alerta para gestor + SLA de recuperação'],
+        ['Sem resposta', 'Não respondeu pesquisa', 'Follow-up de satisfação.', 'Nova tentativa em 24h/72h'],
+        ['Cliente inativo', 'Compra não concluída ou lead perdido', 'Reativação por motivo específico.', 'Régua por motivo de perda']
+      ]
+    ));
+
+    set('retentionOpportunities', table(
+      ['Oportunidade', 'Volume base', 'Como detectar', 'Ação'],
+      [
+        ['Depoimentos', fmt(promoters), 'Clientes promotores após instalação.', 'Coletar prova social para mídia e landing page'],
+        ['Indicações', fmt(Math.round(promoters * .45)), 'Promotor com bom ticket.', 'Campanha de indicação'],
+        ['Recuperação', fmt(detractors), 'Detrator ou perda por atendimento.', 'FCA de experiência e contato humano'],
+        ['Reativação', fmt(inactive), 'Perda por falta de prioridade/timing.', 'Régua de retorno com oferta clara'],
+        ['Expansão', fmt(expansion), 'Compra com bom perfil e necessidade recorrente.', 'Upsell/cross-sell controlado']
+      ]
+    ));
+  }
+
   function renderLosses(m) {
     var reasons = groupBy(filtered.filter(function (row) { return row.lossReason; }), function (row) { return row.lossReason; })
       .sort(function (a, b) { return b.m.total - a.m.total; });
@@ -571,30 +915,39 @@
         targetInput('monthlyLeads', 'Meta mensal de leads', targets.monthlyLeads, 1) +
         targetInput('monthlyPurchases', 'Meta mensal de compras', targets.monthlyPurchases, 1) +
         targetInput('monthlyRevenue', 'Meta mensal de valor', targets.monthlyRevenue, 100) +
-        targetInput('minConversionRate', 'Conversão mínima', targets.minConversionRate, .01)
+        targetInput('minConversionRate', 'Conversão mínima', targets.minConversionRate, .01) +
+        targetInput('metaInvestment', 'Investimento Meta', targets.metaInvestment, 100) +
+        targetInput('googleInvestment', 'Investimento Google', targets.googleInvestment, 100) +
+        targetInput('minRoas', 'ROAS mínimo', targets.minRoas, .1) +
+        targetInput('sellerDailyCapacity', 'Capacidade vendedor/dia', targets.sellerDailyCapacity, 1)
       );
     }
+
+    var investment = number(targets.metaInvestment) + number(targets.googleInvestment);
+    var cac = div(investment, m.purchase);
+    var roas = div(m.value, investment);
 
     set('projectionKpis',
       kpi('Proj. leads', fmt(projectedLeads), '30 dias no ritmo atual') +
       kpi('Proj. compras', fmt(projectedPurchases), '30 dias no ritmo atual') +
       kpi('Proj. valor', money(projectedRevenue), '30 dias no ritmo atual') +
-      kpi('Conversão', pct(m.conversion), 'meta ' + pct(targets.minConversionRate))
+      kpi('CAC / ROAS', money(cac) + ' / ' + roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'investimento editável')
     );
 
     set('targetProgress',
       progress('Leads', m.total, targets.monthlyLeads) +
       progress('Compras', m.purchase, targets.monthlyPurchases) +
       progress('Valor', m.value, targets.monthlyRevenue, true) +
-      progress('Conversão mínima', m.conversion, targets.minConversionRate, false, true)
+      progress('Conversão mínima', m.conversion, targets.minConversionRate, false, true) +
+      progressText('ROAS mínimo', roas, targets.minRoas, roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', number(targets.minRoas).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'x')
     );
 
     set('forecastTable', table(
-      ['Cenário', 'Leads', 'Compras', 'Conversão', 'Valor'],
+      ['Cenário', 'Leads', 'Compras', 'Conversão', 'Valor', 'CAC', 'ROAS'],
       [
-        ['Conservador', fmt(projectedLeads * .85), fmt(projectedPurchases * .85), pct(m.conversion * .92), money(projectedRevenue * .85)],
-        ['Atual', fmt(projectedLeads), fmt(projectedPurchases), pct(m.conversion), money(projectedRevenue)],
-        ['Agressivo', fmt(projectedLeads * 1.15), fmt(projectedPurchases * 1.15), pct(Math.min(1, m.conversion * 1.08)), money(projectedRevenue * 1.15)]
+        ['Conservador', fmt(projectedLeads * .85), fmt(projectedPurchases * .85), pct(m.conversion * .92), money(projectedRevenue * .85), money(div(investment, projectedPurchases * .85)), (div(projectedRevenue * .85, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x'],
+        ['Atual', fmt(projectedLeads), fmt(projectedPurchases), pct(m.conversion), money(projectedRevenue), money(div(investment, projectedPurchases)), (div(projectedRevenue, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x'],
+        ['Agressivo', fmt(projectedLeads * 1.15), fmt(projectedPurchases * 1.15), pct(Math.min(1, m.conversion * 1.08)), money(projectedRevenue * 1.15), money(div(investment, projectedPurchases * 1.15)), (div(projectedRevenue * 1.15, investment)).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x']
       ]
     ));
 
@@ -634,6 +987,11 @@
     return '<div class="progress-row"><div><strong>' + esc(label) + '</strong><span>' + currentText + ' de ' + targetText + '</span></div><div class="bar-line"><i style="--w:' + width + '%"></i></div><b>' + pct(div(current, target)) + '</b></div>';
   }
 
+  function progressText(label, current, target, currentText, targetText) {
+    var width = Math.max(3, Math.min(100, div(current, target) * 100));
+    return '<div class="progress-row"><div><strong>' + esc(label) + '</strong><span>' + esc(currentText) + ' de ' + esc(targetText) + '</span></div><div class="bar-line"><i style="--w:' + width + '%"></i></div><b>' + pct(div(current, target)) + '</b></div>';
+  }
+
   function renderFca(m) {
     var items = getFcas();
     set('fcaList', items.length ? items.map(function (item, index) {
@@ -650,6 +1008,69 @@
         ['Alta', 'Pré-check de cobertura', 'Motivos de infraestrutura consomem atendimento humano', 'Operação + Comercial'],
         ['Alta', 'Régua D0-D3 para falta de prioridade', 'Maior bloco acionável de perda comercial', 'Coordenação comercial'],
         ['Média', 'Auditar progressão MQL -> SQL -> Oportunidade -> Compra', fmt(m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp) + ' quebras de etapa', 'Gestão comercial']
+      ]
+    ));
+  }
+
+  function renderHandoff(m, restriction) {
+    var sellers = unique(filtered.map(function (row) { return row.seller; }));
+    var origins = unique(filtered.map(function (row) { return row.origin; }));
+    var openOpps = Math.max(0, m.opportunity - m.purchase);
+    var riskCount = [
+      m.noOrigin,
+      m.reasonWithoutLostFlag,
+      m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp,
+      openOpps
+    ].filter(function (value) { return value > 0; }).length;
+
+    set('handoffKpis',
+      kpi('Contexto consolidado', fmt(m.total), 'Lead IDs no escopo') +
+      kpi('Donos ativos', fmt(sellers.length), 'responsáveis comerciais') +
+      kpi('Fontes ativas', fmt(origins.length), 'origens/canais') +
+      kpi('Riscos abertos', fmt(riskCount), restriction.current.key)
+    );
+
+    set('handoffSummary',
+      '<div class="compact-grid">' +
+      '<div class="rule-item"><b>Visão de negócio</b><span>Internet local com funil de venda, cobertura, viabilidade e alta dependência de CRM confiável.</span></div>' +
+      '<div class="rule-item"><b>Restrição atual</b><span>' + esc(restriction.current.key) + ': ' + esc(restriction.current.evidence) + '</span></div>' +
+      '<div class="rule-item"><b>O que já está funcionando</b><span>' + fmt(m.purchase) + ' compras, ' + pct(m.conversion) + ' de compra/lead e ticket médio de ' + money(m.ticket) + '.</span></div>' +
+      '<div class="rule-item"><b>O que não pode se perder</b><span>Motivos de perda, origem, dono, próxima ação e progressão MQL → SQL → Oportunidade → Compra.</span></div>' +
+      '</div>'
+    );
+
+    set('stackTable', table(
+      ['Camada', 'Fonte / ferramenta', 'Status no painel', 'Próximo cuidado'],
+      [
+        ['CRM', 'GrowthPack / BASE_CRM', 'Consolidado por Lead ID', 'Corrigir status perdido e etapas'],
+        ['Mídia', 'Meta Ads + Google Ads', 'Origem lida quando marcada', 'Fechar lacuna de origem/UTM'],
+        ['Atendimento', 'WhatsApp / Bot / Comercial', 'Modelo operacional inferido', 'Conectar SLA real quando disponível'],
+        ['Tarefas', 'FCA local + rotina V4 ON', 'Cadastro manual no navegador', 'Definir dono, prazo e evidência'],
+        ['Check-ins', 'Reuniões / transcrições / handoff', 'Estrutura pronta', 'Registrar decisões e próximos 7 dias']
+      ]
+    ));
+
+    set('nextSevenDays', table(
+      ['Dia', 'Prioridade', 'Dono', 'Evidência esperada'],
+      [
+        ['D0', 'Corrigir origem obrigatória e status perdido', 'CRM / Sales Ops', 'Queda de registros sem origem e motivo sem flag'],
+        ['D1', 'Separar fila de cobertura/viabilidade antes do comercial', 'Operação + CRM', 'Menos perda por infraestrutura'],
+        ['D2', 'Auditar Meta x Google por motivo de perda', 'Mídia + Comercial', 'Canal com qualidade medida por compra e motivo'],
+        ['D3', 'Implantar régua D0-D3 para falta de prioridade', 'Coordenação comercial', 'Mais retorno e menos perda por interesse'],
+        ['D4', 'Revisar WIP e capacidade por vendedora', 'Gestão comercial', 'Fila redistribuída e SLA definido'],
+        ['D5', 'Criar FCA dos 2 maiores gargalos', 'Gestor', 'Fato, causa, ação, dono e prazo cadastrados'],
+        ['D7', 'Check-in de restrição: o gargalo mudou?', 'GrowthOps', 'Nova restrição calculada pelo cockpit']
+      ]
+    ));
+
+    set('handoffRisks', table(
+      ['Risco', 'Volume', 'Por que importa', 'Mitigação'],
+      [
+        ['CRM não confiável', fmt(m.dataIssues), 'Decisão vira opinião se o dado está incompleto.', 'Auditoria semanal + campos obrigatórios'],
+        ['Origem vazia', fmt(m.noOrigin), 'CAC, ROAS e qualidade por canal ficam cegos.', 'UTM/origem obrigatória'],
+        ['Perda sem status', fmt(m.reasonWithoutLostFlag), 'O dashboard subestima perdas reais.', 'Motivo de perda sincronizado com status'],
+        ['Oportunidade parada', fmt(openOpps), 'Receita potencial envelhece sem dono claro.', 'Fila quente + follow-up D0/D1/D3'],
+        ['Restrição sem FCA', restriction.current.key, 'Gargalo volta a se repetir se não vira execução.', 'Cadastrar FCA e tarefa com evidência']
       ]
     ));
   }
@@ -701,13 +1122,19 @@
   function renderAll() {
     applyFilters();
     var m = metrics(filtered);
-    renderShell(m);
-    renderOverview(m);
+    var restriction = restrictionEngine(filtered, m);
+    renderShell(m, restriction);
+    renderOverview(m, restriction);
+    renderRestriction(m, restriction);
+    renderPcp(m);
     renderCommercial(m);
     renderMedia(m);
+    renderService(m);
+    renderRetention(m);
     renderLosses(m);
     renderTargets(m);
     renderFca(m);
+    renderHandoff(m, restriction);
     renderStatus(m);
     window.ST1Dashboard = {
       status: 'ready',
@@ -715,6 +1142,7 @@
       filtered: filtered,
       filters: filters,
       metrics: m,
+      restriction: restriction,
       render: renderAll
     };
   }
@@ -771,7 +1199,9 @@
       var targets = getTargets();
       targets[target] = Number(event.target.value);
       saveTargets(targets);
-      renderTargets(metrics(filtered), true);
+      var m = metrics(filtered);
+      renderTargets(m, true);
+      renderPcp(m);
     });
 
     if ($('addFca')) {

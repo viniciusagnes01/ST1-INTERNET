@@ -1,11 +1,21 @@
 # ST1 Internet | GrowthPack Command Center
 
-Painel de comando comercial em **Modo V4 ON** para acompanhar GrowthPack da ST1 Internet com 4 abas:
+Cockpit de receita, restrição e processo comercial em **Modo V4 ON** para acompanhar GrowthPack da ST1 Internet.
 
-1. **Geral**: visão executiva, funil consolidado, ritmo diário e alertas.
-2. **Mídia**: leitura por origem, volume, conversão e qualidade de lead.
-3. **CRM Comercial**: funil por vendedora, etapa por etapa, motivos de perda, inconsistências e gargalos.
-4. **Meta & FCA**: metas configuráveis, Health operacional, FCAs automáticos e matriz de automação.
+Abas principais:
+
+1. **Visão Geral**: leitura executiva, funil, ritmo diário e restrição atual.
+2. **Restrição**: motor TOC/Goldratt com evidência, impacto, ação, dono e prazo.
+3. **PCP Comercial**: WIP, capacidade, aging, SLA e fila de prioridade.
+4. **Comercial**: funil por vendedora, etapa por etapa, motivos de perda e gargalos.
+5. **Mídia**: origem, volume, conversão, qualidade comercial, CAC e ROAS editáveis.
+6. **Atendimento**: modelo de WhatsApp/bot, transbordo humano e risco de SLA.
+7. **Retenção**: camada de CSAT/NPS, recompra, recuperação e indicação.
+8. **Perdas**: motivos, categorias operacionais e plano de correção.
+9. **Metas**: metas configuráveis, projeções, capacidade e forecast.
+10. **FCA**: cadastro manual de fato, causa, ação, dono, prazo e status.
+11. **Handoff**: continuidade de conta, stack, riscos e próximos 7 dias.
+12. **Sistema**: auditoria de dados, governança e arquitetura V4 ON.
 
 ## Como rodar
 
@@ -50,7 +60,7 @@ Os filtros são aplicados em todas as abas:
 
 Este projeto segue a lógica operacional:
 
-**Cliente → Dados → Diagnóstico → Decisão → Tarefa → Follow-up → Risco/FCA → Melhoria contínua**
+**Cliente → Dados → Diagnóstico → Restrição → Decisão → Tarefa → Follow-up → Risco/FCA → Melhoria contínua**
 
 Toda divergência relevante deve virar uma das ações abaixo:
 
