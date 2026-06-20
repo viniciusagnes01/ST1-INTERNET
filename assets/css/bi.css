@@ -731,7 +731,7 @@ p {
   justify-content: space-between;
   align-items: flex-end;
   gap: 22px;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .filter-head strong {
@@ -743,10 +743,6 @@ p {
 .filter-head span,
 .section-head p {
   color: var(--muted);
-}
-
-.section-head {
-  margin: 34px 0 18px;
 }
 
 .section-head h2 {
@@ -804,6 +800,7 @@ textarea:focus {
 
 .workspace-main {
   min-width: 0;
+  display: grid;
 }
 
 .panel {
@@ -811,7 +808,8 @@ textarea:focus {
 }
 
 .panel.active {
-  display: block;
+  display: grid;
+  gap: 24px;
   animation: panelIn 0.28s ease both;
 }
 
@@ -824,6 +822,22 @@ textarea:focus {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.filters,
+.card,
+.seller,
+.insight-card,
+.fca-item {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.filter-head > div:first-child,
+.section-head > div:first-child {
+  display: grid;
+  gap: 10px;
 }
 
 .kpi,
@@ -869,7 +883,7 @@ textarea:focus {
 .stack-list,
 .toc-list {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .bar-row,
@@ -1044,7 +1058,7 @@ tr.total td {
 
 .insight-card h3,
 .card h3 {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 18px;
   line-height: 1.2;
 }
@@ -1054,6 +1068,7 @@ tr.total td {
 .seller p,
 .fca-item p,
 .empty {
+  margin: 0;
   max-width: 60ch;
   line-height: 1.68;
 }
@@ -1182,7 +1197,7 @@ tr.total td {
 }
 
 .progress-row {
-  margin: 13px 0;
+  margin: 16px 0;
 }
 
 .fca-form {
@@ -1209,20 +1224,20 @@ tr.total td {
 }
 
 .fca-item h4 {
-  margin: 0 0 7px;
+  margin: 0;
   font-family: Sora, Inter, sans-serif;
   font-size: 18px;
 }
 
 .fca-item small {
   display: block;
-  margin-bottom: 9px;
+  margin: 0;
   color: var(--muted);
   font-weight: 800;
 }
 
 .fca-item p {
-  margin: 6px 0;
+  margin: 0;
   font-size: 13px;
 }
 
