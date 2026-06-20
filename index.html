@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#040823">
+  <meta name="theme-color" content="#03060b">
   <title>ST1 Internet | Cockpit V4 ON</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
   <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
-  <link rel="stylesheet" href="assets/css/bi.css?v=bi-010">
+  <link rel="stylesheet" href="assets/css/bi.css?v=bi-012">
 </head>
 <body>
   <div class="dashboard-shell">
@@ -102,7 +102,7 @@
         <div class="workspace-context">
           <span class="workspace-breadcrumb" id="activeSectionEyebrow">Cockpit / Visão Geral</span>
           <h1 class="workspace-title" id="activeSectionTitle">Visão Geral</h1>
-          <p class="workspace-copy" id="activeSectionCopy">Cockpit de receita, restrição, CRM, PCP, mídia, atendimento, retenção e governança em modo V4 ON.</p>
+          <p class="workspace-copy" id="activeSectionCopy">Receita, CRM e gargalos da operacao em uma leitura mais limpa e objetiva.</p>
         </div>
 
         <div class="workspace-actions">
@@ -139,7 +139,7 @@
               <div class="hero-copy-block">
                 <p class="hero-kicker" id="heroKicker">Cockpit de Receita e Restrição</p>
                 <h2 id="heroTitle">Onde a receita está travando agora</h2>
-                <p id="heroCopy">Visão executiva da operação comercial conectando mídia, CRM, atendimento, capacidade e execução do time em uma única superfície.</p>
+                <p id="heroCopy">Leitura executiva da operacao conectando receita, CRM, capacidade e execucao sem poluir a analise.</p>
                 <div class="statusline" id="statusLine"></div>
               </div>
               <div class="signal-grid" id="heroSignalGrid"></div>
@@ -164,7 +164,7 @@
         <div class="filter-head">
           <div>
             <strong>Filtros globais</strong>
-            <span>Período, vendedora, origem, etapa, motivo e categoria.</span>
+            <span>Periodo, vendedora, origem, etapa, motivo e categoria.</span>
           </div>
           <div class="filter-actions">
             <button class="btn primary" id="applyFilters" type="button">Aplicar</button>
@@ -198,7 +198,7 @@
           <div class="section-head">
             <div>
               <h2>Visão Geral</h2>
-              <p>Resumo executivo do funil, ritmo de compra, base filtrada e leitura V4 ON do que está puxando ou travando resultado.</p>
+              <p>Resumo direto do funil, ritmo de compra e gargalos que mais pesam no resultado.</p>
             </div>
           </div>
           <div class="kpi-grid" id="globalKpis"></div>
@@ -223,11 +223,11 @@
           <div class="section-head">
             <div>
               <h2>Restrição</h2>
-              <p>Motor TOC/Goldratt para identificar onde a receita está travando agora.</p>
+              <p>TOC para mostrar onde a receita trava agora e qual acao vem primeiro.</p>
             </div>
           </div>
           <div class="kpi-grid" id="restrictionKpis"></div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid split-grid--wide">
             <article class="card glass decision-card">
               <h3>Restrição atual do sistema</h3>
               <div id="currentRestriction"></div>
@@ -253,7 +253,7 @@
           <div class="section-head">
             <div>
               <h2>PCP Comercial</h2>
-              <p>Planejamento e controle do processo: WIP, capacidade, aging, SLA e prioridade do dia.</p>
+              <p>Capacidade, fila, aging e prioridade do dia em uma leitura pratica.</p>
             </div>
           </div>
           <div class="kpi-grid" id="pcpKpis"></div>
@@ -267,7 +267,7 @@
               <div class="table-wrap" id="sellerCapacityTable"></div>
             </article>
           </div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid">
             <article class="card glass">
               <h3>Fila de prioridade</h3>
               <div class="table-wrap" id="priorityQueueTable"></div>
@@ -283,7 +283,7 @@
           <div class="section-head">
             <div>
               <h2>Comercial</h2>
-              <p>Ranking por vendedora, gargalos de etapa, conversão, ticket e motivos dominantes.</p>
+              <p>Conversao, ticket e vazamentos por vendedora sem excesso de ruido.</p>
             </div>
           </div>
           <div class="kpi-grid" id="commercialKpis"></div>
@@ -308,7 +308,7 @@
           <div class="section-head">
             <div>
               <h2>Mídia</h2>
-              <p>Origem, qualidade de lead, conversão por canal e impacto no valor registrado.</p>
+              <p>Canal, qualidade de lead e impacto real na receita.</p>
             </div>
           </div>
           <div class="kpi-grid" id="mediaKpis"></div>
@@ -322,7 +322,7 @@
               <div id="originConversion"></div>
             </article>
           </div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid">
             <article class="card glass">
               <h3>Matriz vendedor x origem</h3>
               <div class="table-wrap" id="sellerOrigin"></div>
@@ -338,11 +338,11 @@
           <div class="section-head">
             <div>
               <h2>Atendimento</h2>
-              <p>Modelo de WhatsApp, bot, transbordo humano e SLA para conectar entrada com execução comercial.</p>
+              <p>Bot, humano e SLA organizados como fluxo e nao como ruido operacional.</p>
             </div>
           </div>
           <div class="kpi-grid" id="serviceKpis"></div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid">
             <article class="card glass">
               <h3>Fluxo bot + humano</h3>
               <div id="botFlow"></div>
@@ -362,11 +362,11 @@
           <div class="section-head">
             <div>
               <h2>Retenção</h2>
-              <p>Camada de CSAT, NPS, recompra, indicação e réguas de relacionamento para depois da venda.</p>
+              <p>Pos-venda, recuperacao e expansao em leitura curta e acionavel.</p>
             </div>
           </div>
           <div class="kpi-grid" id="retentionKpis"></div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid">
             <article class="card glass">
               <h3>Segmentos CSAT/NPS</h3>
               <div id="csatSegments"></div>
@@ -386,7 +386,7 @@
           <div class="section-head">
             <div>
               <h2>Perdas</h2>
-              <p>Motivos, categorias operacionais e impacto por volume.</p>
+              <p>Motivos de perda organizados por impacto e correcao.</p>
             </div>
           </div>
           <div class="kpi-grid" id="lossKpis"></div>
@@ -410,12 +410,12 @@
           <div class="section-head">
             <div>
               <h2>Metas</h2>
-              <p>Metas editáveis, projeção de 30 dias, comparativos e leitura mensal orientada por run rate.</p>
+              <p>Run rate, forecast e gap de meta sem espalhar a analise.</p>
             </div>
           </div>
           <div class="target-grid" id="targetInputs"></div>
           <div class="kpi-grid" id="projectionKpis"></div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid">
             <article class="card glass">
               <h3>Ritmo mensal</h3>
               <div id="monthPulse"></div>
@@ -451,7 +451,7 @@
           <div class="section-head">
             <div>
               <h2>FCA</h2>
-              <p>Registro manual do gestor para transformar risco em execução do time.</p>
+              <p>Fato, causa e acao para transformar risco em execucao do time.</p>
             </div>
           </div>
           <article class="card glass">
@@ -488,11 +488,11 @@
           <div class="section-head">
             <div>
               <h2>Handoff</h2>
-              <p>Continuidade de conta: contexto, stack, riscos, próximos 7 dias e pauta do próximo check-in.</p>
+              <p>Contexto, riscos e proximos 7 dias em um handoff que nao perde continuidade.</p>
             </div>
           </div>
           <div class="kpi-grid" id="handoffKpis"></div>
-          <div class="grid-2">
+          <div class="grid-2 split-grid split-grid--wide">
             <article class="card glass">
               <h3>Resumo executivo de transição</h3>
               <div id="handoffSummary"></div>
@@ -518,7 +518,7 @@
           <div class="section-head">
             <div>
               <h2>Sistema</h2>
-              <p>Fonte, consistência da base, governança e arquitetura operacional.</p>
+              <p>Saude da base, governanca e arquitetura para decidir com dado confiavel.</p>
             </div>
           </div>
           <div class="kpi-grid" id="statusKpis"></div>
@@ -542,6 +542,6 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="assets/js/main.js?v=bi-011"></script>
+  <script type="module" src="assets/js/main.js?v=bi-012"></script>
 </body>
 </html>

@@ -16,18 +16,18 @@
   };
 
   var tabMeta = {
-    overview: { eyebrow: 'Cockpit / Visão Geral', title: 'Visão Geral', copy: 'Resumo executivo da receita, saúde do CRM, ritmo de compra e leitura V4 ON da operação.' },
-    restriction: { eyebrow: 'Cockpit / Restrição', title: 'Restrição', copy: 'TOC, Goldratt e gargalo dominante do sistema traduzidos para ação prática.' },
-    pcp: { eyebrow: 'Cockpit / PCP Comercial', title: 'PCP Comercial', copy: 'Capacidade, aging, fila quente e trabalho em progresso por etapa e por vendedora.' },
-    commercial: { eyebrow: 'Cockpit / Comercial', title: 'Comercial', copy: 'Conversão, ticket, vazamentos de etapa e performance por vendedora.' },
-    media: { eyebrow: 'Cockpit / Mídia', title: 'Mídia', copy: 'Origem, qualidade comercial do lead e impacto real sobre receita e CAC.' },
-    service: { eyebrow: 'Cockpit / Atendimento', title: 'Atendimento', copy: 'Fluxo bot + humano, SLA, qualificação e risco de abandono.' },
-    retention: { eyebrow: 'Cockpit / Retenção', title: 'Retenção', copy: 'CSAT, NPS, recompra, indicação e recuperação de relacionamento.' },
-    losses: { eyebrow: 'Cockpit / Perdas', title: 'Perdas', copy: 'Motivos, categorias operacionais e plano de correção orientado por impacto.' },
-    targets: { eyebrow: 'Cockpit / Metas', title: 'Metas', copy: 'Run rate, forecast, gaps para meta e leitura mensal do que falta destravar.' },
-    fca: { eyebrow: 'Cockpit / FCA', title: 'FCA', copy: 'Registro manual do gestor para transformar fato, causa e ação em execução.' },
-    handoff: { eyebrow: 'Cockpit / Handoff', title: 'Handoff', copy: 'Continuidade de contexto, stack, riscos abertos e próximos 7 dias.' },
-    status: { eyebrow: 'Cockpit / Sistema', title: 'Sistema', copy: 'Auditoria da base, confiabilidade operacional e arquitetura V4 ON em produção.' }
+    overview: { eyebrow: 'Cockpit / Visão Geral', title: 'Visão Geral', copy: 'Receita, CRM e gargalos da operação em uma leitura só.' },
+    restriction: { eyebrow: 'Cockpit / Restrição', title: 'Restrição', copy: 'Gargalo dominante do sistema com ação, dono e prazo.' },
+    pcp: { eyebrow: 'Cockpit / PCP Comercial', title: 'PCP Comercial', copy: 'Capacidade, fila e aging para priorizar o dia.' },
+    commercial: { eyebrow: 'Cockpit / Comercial', title: 'Comercial', copy: 'Conversão, ticket e vazamentos por vendedora.' },
+    media: { eyebrow: 'Cockpit / Mídia', title: 'Mídia', copy: 'Canal, intenção e impacto real sobre receita.' },
+    service: { eyebrow: 'Cockpit / Atendimento', title: 'Atendimento', copy: 'Entrada, transbordo humano e risco de SLA.' },
+    retention: { eyebrow: 'Cockpit / Retenção', title: 'Retenção', copy: 'Pós-venda, reativação e expansão com foco prático.' },
+    losses: { eyebrow: 'Cockpit / Perdas', title: 'Perdas', copy: 'Motivos de perda organizados por impacto e correção.' },
+    targets: { eyebrow: 'Cockpit / Metas', title: 'Metas', copy: 'Run rate, forecast e gap de meta sem excesso de ruído.' },
+    fca: { eyebrow: 'Cockpit / FCA', title: 'FCA', copy: 'Fato, causa e ação com acompanhamento direto.' },
+    handoff: { eyebrow: 'Cockpit / Handoff', title: 'Handoff', copy: 'Contexto, riscos e próximos passos sem perder continuidade.' },
+    status: { eyebrow: 'Cockpit / Sistema', title: 'Sistema', copy: 'Saúde da base e governança para decidir com dado confiável.' }
   };
 
   var defaultTargets = {
@@ -1206,7 +1206,7 @@
       overview: {
         kicker: 'Cockpit de Receita e Restrição',
         title: 'Onde a receita está travando agora',
-        copy: 'Visão executiva da operação comercial conectando mídia, CRM, atendimento, capacidade e execução do time em uma única superfície.',
+        copy: 'Leitura executiva da operação com receita, CRM e restrição em foco.',
         asideLabel: 'Restrição dominante',
         statCards:
           shellMetric('Receita registrada', money(m.value), 'Ticket médio ' + money(m.ticket), 'up') +
@@ -1235,7 +1235,7 @@
       restriction: {
         kicker: 'Motor TOC / Goldratt',
         title: 'Qual trava está tirando velocidade da receita',
-        copy: 'O foco sai da métrica isolada e vai para a restrição dominante, com ação, dono e prazo para destravar o sistema.',
+        copy: 'Motor TOC para mostrar onde o sistema trava e o que atacar agora.',
         asideLabel: 'Plano TOC',
         statCards:
           shellMetric('Restrição atual', esc(current.key), 'score ' + fmt(current.score), current.kind === 'danger' ? 'danger' : 'warn') +
@@ -1265,7 +1265,7 @@
       pcp: {
         kicker: 'Planejamento e Controle do Processo',
         title: 'Qual fila precisa andar hoje',
-        copy: 'PCP comercial para enxergar capacidade, aging, gargalo por etapa e onde o time precisa atacar primeiro.',
+        copy: 'Fila, capacidade e aging para priorizar o esforço do time.',
         asideLabel: 'Foco do dia',
         statCards:
           shellMetric('Etapa crítica', esc(topStage.key), fmt(topStage.wip) + ' em fila', topStage.wip > 80 ? 'danger' : 'warn') +
@@ -1293,7 +1293,7 @@
       commercial: {
         kicker: 'Fluxo comercial',
         title: 'Quem está convertendo e onde perde tração',
-        copy: 'Leitura direta de conversão, ticket, vazamento de etapa e motivo dominante para orientar gestão comercial.',
+        copy: 'Conversão, ticket e perda de tração por vendedora.',
         asideLabel: 'Sinal comercial',
         statCards:
           shellMetric('Top closer', fmt(bestCloser.m.purchase), bestCloser.key + ' | ' + pct(bestCloser.m.conversion), 'up') +
@@ -1321,7 +1321,7 @@
       media: {
         kicker: 'Qualidade de canal',
         title: 'Qual origem traz lead quente e qual está poluindo a fila',
-        copy: 'O painel cruza canal com conversão comercial, origem vazia e impacto no esforço operacional do time.',
+        copy: 'Canal, intenção e origem real sem poluir a leitura.',
         asideLabel: 'Sinal de canal',
         statCards:
           shellMetric('Google Ads', pct(google.conversion), fmt(google.purchase) + ' compras em ' + fmt(google.total) + ' leads', google.conversion >= meta.conversion ? 'up' : 'warn') +
@@ -1349,7 +1349,7 @@
       service: {
         kicker: 'Atendimento e transbordo',
         title: 'Atendimento precisa virar fluxo, não ruído',
-        copy: 'O cockpit mede da entrada até o transbordo humano, destacando abandono, cobertura e risco de SLA.',
+        copy: 'Bot, humano e SLA organizados como fluxo operacional.',
         asideLabel: 'SLA operacional',
         statCards:
           shellMetric('Conversas / leads', fmt(conversations), 'entrada operacional', 'up') +
@@ -1377,7 +1377,7 @@
       retention: {
         kicker: 'Pós-venda e expansão',
         title: 'Depois da venda, onde existe recuperação e valor extra',
-        copy: 'A camada de retenção organiza promotores, detratores, reativação e expansão para não perder receita depois do fechamento.',
+        copy: 'Pós-venda, recuperação e expansão em leitura prática.',
         asideLabel: 'Leitura de retenção',
         statCards:
           shellMetric('Promotores estimados', fmt(promoters), 'clientes para depoimento e indicação', 'up') +
@@ -1405,7 +1405,7 @@
       losses: {
         kicker: 'Vazamentos de receita',
         title: 'Qual motivo está drenando o resultado antes da venda',
-        copy: 'A leitura de perdas deixa de ser genérica e passa a mostrar o que mais consome tempo, margem e capacidade do time.',
+        copy: 'Perdas classificadas por motivo, categoria e ação.',
         asideLabel: 'Motivo dominante',
         statCards:
           shellMetric('Motivos mapeados', fmt(m.loss), pct(m.lossRate) + ' dos leads no filtro', 'warn') +
@@ -1433,7 +1433,7 @@
       targets: {
         kicker: 'Run rate e forecast',
         title: 'Quanto falta para a meta fechar sozinha',
-        copy: 'A área de metas mostra ritmo mensal, lacuna de compra e receita, além do quanto a operação precisa destravar agora.',
+        copy: 'Ritmo mensal, forecast e o gap real para bater a meta.',
         asideLabel: 'Gap principal',
         statCards:
           shellMetric('Proj. leads', fmt(projectedLeads), 'meta ' + fmt(targets.monthlyLeads), projectedLeads >= number(targets.monthlyLeads) ? 'up' : 'warn') +
@@ -1461,7 +1461,7 @@
       fca: {
         kicker: 'Execução com dono',
         title: 'Fato, causa e ação precisam sair do discurso e virar acompanhamento',
-        copy: 'O bloco de FCA centraliza o que o gestor quer que o time execute, com status, prazo e evidência.',
+        copy: 'O que precisa virar execução, com dono, prazo e evidência.',
         asideLabel: 'FCA em andamento',
         statCards:
           shellMetric('FCAs abertos', fmt(openFcas), 'pendências em execução', openFcas > 0 ? 'warn' : 'up') +
@@ -1489,7 +1489,7 @@
       handoff: {
         kicker: 'Continuidade e contexto',
         title: 'Quando a conta muda de mãos, o contexto não pode morrer',
-        copy: 'Handoff organiza stack, riscos, próximos 7 dias e a leitura de continuidade para a operação seguir sem ruído.',
+        copy: 'Stack, riscos e próximos 7 dias sem perder contexto.',
         asideLabel: 'Risco de continuidade',
         statCards:
           shellMetric('Riscos abertos', fmt(riskBlocks), 'blocos exigindo alinhamento', 'warn') +
@@ -1517,7 +1517,7 @@
       status: {
         kicker: 'Arquitetura e confiabilidade',
         title: 'Quando o dado fica torto, o dashboard decide errado',
-        copy: 'A camada de sistema mostra confiabilidade da base, pontos de auditoria e o quanto a operação ainda está vulnerável a leitura falsa.',
+        copy: 'Qualidade da base e arquitetura para evitar decisão torta.',
         asideLabel: 'Saúde do sistema',
         statCards:
           shellMetric('Health CRM', pct(m.health), fmt(issueCount) + ' alertas lidos', m.health >= 0.7 ? 'up' : 'danger') +
