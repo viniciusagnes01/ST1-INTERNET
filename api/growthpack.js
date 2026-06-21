@@ -48,6 +48,13 @@ function money(v) {
 
 function normDate(v) {
   const s = String(v ?? '').trim();
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const parsed = new Date(Date.UTC(1899, 11, 30) + Math.round(Number(s)) * 86400000);
+    const y = parsed.getUTCFullYear();
+    const mo = parsed.getUTCMonth() + 1;
+    const d = parsed.getUTCDate();
+    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
   let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
   m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -55,7 +62,6 @@ function normDate(v) {
     let y = m[1];
     let mo = Number(m[2]);
     let d = Number(m[3]);
-    if (mo <= 12 && d <= 12) { const t = mo; mo = d; d = t; }
     return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   }
   return '';

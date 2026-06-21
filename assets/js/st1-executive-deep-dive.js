@@ -74,6 +74,12 @@
   }
 
   function getRows() {
+    if (window.ST1Dashboard && Array.isArray(window.ST1Dashboard.filtered) && window.ST1Dashboard.filtered.length) {
+      return window.ST1Dashboard.filtered;
+    }
+    if (window.ST1Dashboard && Array.isArray(window.ST1Dashboard.rows) && window.ST1Dashboard.rows.length) {
+      return window.ST1Dashboard.rows;
+    }
     var source = Array.isArray(window.__GROWTHPACK_FALLBACK_DATA__) ? window.__GROWTHPACK_FALLBACK_DATA__ : [];
     var seen = {};
     return source.map(normalize).filter(function (row) {
@@ -383,7 +389,7 @@
       button.className = 'tab side-tab';
       button.setAttribute('data-tab', PANEL_ID);
       button.type = 'button';
-      button.innerHTML = '<span class="tab-icon">◆</span><span class="tab-copy"><strong>Conselho</strong><small>Goldratt, TOC e decisão</small></span>';
+      button.innerHTML = '<span class="tab-icon">◆</span><span class="tab-copy"><strong>Estratégia</strong><small>Deep dive executivo</small></span>';
       nav.appendChild(button);
       button.addEventListener('click', activateExecutivePanel);
     }
@@ -393,7 +399,7 @@
       var panel = document.createElement('section');
       panel.className = 'panel';
       panel.id = PANEL_ID;
-      panel.innerHTML = '<div class="section-head"><div><h2>Conselho Executivo Profundo</h2><p>Analise de restricao, PCP, funil, risco e plano de execucao usando Goldratt/TOC, GrowthOps e Modo V4 ON.</p></div></div><div class="kpi-grid" id="executiveDeepDiveKpis"></div><div id="executiveDeepDiveBody"></div>';
+      panel.innerHTML = '<div class="section-head"><div><h2>Estratégia Executiva Profunda</h2><p>Analise de restricao, PCP, funil, risco e plano de execucao usando Goldratt/TOC, GrowthOps e Modo V4 ON.</p></div></div><div class="kpi-grid" id="executiveDeepDiveKpis"></div><div id="executiveDeepDiveBody"></div>';
       main.appendChild(panel);
     }
     renderPanel();
@@ -407,7 +413,7 @@
     var panel = $(PANEL_ID);
     if (panel) panel.classList.add('active');
     text('activeSectionEyebrow', 'Cockpit / Conselho Executivo');
-    text('activeSectionTitle', 'Conselho Executivo Profundo');
+    text('activeSectionTitle', 'Estratégia Executiva Profunda');
     text('activeSectionCopy', 'Goldratt, TOC, PCP, funil, risco e execucao em uma unica decisao.');
     text('heroKicker', 'Estrategista Executivo Profundo');
     text('heroTitle', 'A decisao certa antes de escalar volume');
@@ -420,4 +426,5 @@
   } else {
     injectTabAndPanel();
   }
+  window.addEventListener('st1-dashboard-rendered', renderPanel);
 })();

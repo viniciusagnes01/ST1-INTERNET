@@ -4,9 +4,12 @@
   var rows = [];
   var filtered = [];
   var activeTab = 'overview';
+  var dataBounds = { start: '', end: '' };
+  var dataSourceLabel = 'cache GrowthPack';
+  var dataUpdatedAt = '';
   var filters = {
-    start: '2026-06-01',
-    end: '2026-06-18',
+    start: '',
+    end: '',
     seller: 'all',
     origin: 'all',
     stage: 'all',
@@ -103,6 +106,43 @@
     }
   }
 
+  function pad2(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function isoDateFromParts(year, month, day) {
+    year = Number(year);
+    month = Number(month);
+    day = Number(day);
+    if (!year || month < 1 || month > 12 || day < 1 || day > 31) return '';
+    var date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return '';
+    return year + '-' + pad2(month) + '-' + pad2(day);
+  }
+
+  function dateFromSerial(value) {
+    var serial = Number(value);
+    if (!isFinite(serial)) return '';
+    var parsed = new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86400000);
+    var year = parsed.getUTCFullYear();
+    var month = parsed.getUTCMonth() + 1;
+    var day = parsed.getUTCDate();
+    var swapped = isoDateFromParts(year, day, month);
+    if (swapped && day <= 12 && month <= 12) return swapped;
+    return isoDateFromParts(year, month, day);
+  }
+
+  function normalizeDate(value) {
+    var textValue = String(value == null ? '' : value).trim();
+    if (!textValue) return '';
+    if (/^\d+(\.\d+)?$/.test(textValue)) return dateFromSerial(textValue);
+    var br = textValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (br) return isoDateFromParts(br[3], br[2], br[1]);
+    var iso = textValue.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (iso) return isoDateFromParts(iso[1], iso[2], iso[3]);
+    return textValue.slice(0, 10);
+  }
+
   function categoryFor(reason) {
     var reasonText = cleanText(reason).toLowerCase();
     if (!reasonText) return 'Sem motivo';
@@ -135,7 +175,7 @@
     if (seller.toLowerCase() === 'rayane nunes') seller = 'Rayane Nunes';
 
     return {
-      date: String(row.date || row.Data || row.dateRaw || '').slice(0, 10),
+      date: normalizeDate(row.date || row.Data || row.dateRaw || ''),
       leadId: String(row.leadId || row['Lead ID'] || '').replace(/\.0$/, ''),
       seller: seller || 'Sem responsável',
       origin: cleanText(row.origin || originFrom(row)),
@@ -187,14 +227,81 @@
     return output;
   }
 
-  function loadRows() {
-    var source = Array.isArray(window.__GROWTHPACK_FALLBACK_DATA__) ? window.__GROWTHPACK_FALLBACK_DATA__ : [];
+  function computeDateBounds(list) {
+    var dates = list.map(function (row) { return row.date; }).filter(Boolean).sort();
+    return { start: dates[0] || '', end: dates[dates.length - 1] || '' };
+  }
+
+  function defaultFilterState() {
+    return {
+      start: dataBounds.start,
+      end: dataBounds.end,
+      seller: 'all',
+      origin: 'all',
+      stage: 'all',
+      reason: 'all',
+      category: 'all',
+      search: ''
+    };
+  }
+
+  function sourceInfo() {
+    var stamp = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
+    var updated = stamp && !isNaN(stamp.getTime()) ? ' | atual. ' + stamp.toLocaleString('pt-BR') : '';
+    return dataSourceLabel + updated + ' | ' + fmt(rows.length) + ' Lead IDs';
+  }
+
+  async function fetchJson(url) {
+    try {
+      var response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return await response.json();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function hydrateRows(source, label, updatedAt) {
     var seen = {};
     rows = (source.length ? source.map(normalize) : fallbackRows()).filter(function (row) {
       if (!row.date || !row.leadId || seen[row.leadId]) return false;
       seen[row.leadId] = true;
       return true;
     });
+    dataSourceLabel = label || 'cache GrowthPack';
+    dataUpdatedAt = updatedAt || '';
+    dataBounds = computeDateBounds(rows);
+    if (!filters.start && !filters.end) filters = defaultFilterState();
+  }
+
+  async function loadRows() {
+    var source = [];
+    var label = 'cache GrowthPack';
+    var updatedAt = '';
+
+    if (typeof fetch === 'function' && window.location.protocol !== 'file:') {
+      var apiPayload = await fetchJson('/api/growthpack');
+      if (apiPayload && apiPayload.ok && Array.isArray(apiPayload.records) && apiPayload.records.length) {
+        source = apiPayload.records;
+        label = 'GrowthPack API';
+        updatedAt = apiPayload.updatedAt || '';
+      }
+
+      if (!source.length) {
+        var fullJson = await fetchJson('data/growthpack-base-crm.json');
+        if (Array.isArray(fullJson) && fullJson.length) {
+          source = fullJson;
+          label = 'GrowthPack JSON completo';
+        }
+      }
+    }
+
+    if (!source.length && Array.isArray(window.__GROWTHPACK_FALLBACK_DATA__) && window.__GROWTHPACK_FALLBACK_DATA__.length) {
+      source = window.__GROWTHPACK_FALLBACK_DATA__;
+      label = 'cache GrowthPack';
+    }
+
+    hydrateRows(source, label, updatedAt);
   }
 
   function unique(values) {
@@ -222,8 +329,16 @@
     optionList('fReason', unique(rows.map(function (row) { return row.lossReason; }).filter(Boolean)), 'Todos');
     optionList('fCategory', unique(rows.map(function (row) { return row.reasonCategory; }).filter(function (x) { return x !== 'Sem motivo'; })), 'Todas');
 
-    if ($('fStart')) $('fStart').value = filters.start;
-    if ($('fEnd')) $('fEnd').value = filters.end;
+    if ($('fStart')) {
+      $('fStart').min = dataBounds.start;
+      $('fStart').max = dataBounds.end;
+      $('fStart').value = filters.start;
+    }
+    if ($('fEnd')) {
+      $('fEnd').min = dataBounds.start;
+      $('fEnd').max = dataBounds.end;
+      $('fEnd').value = filters.end;
+    }
     if ($('fSeller')) $('fSeller').value = filters.seller;
     if ($('fOrigin')) $('fOrigin').value = filters.origin;
     if ($('fStage')) $('fStage').value = filters.stage;
@@ -479,6 +594,189 @@
     }).join('') + '</tbody></table>';
   }
 
+  function chartColor(index) {
+    return ['#58e6ff', '#ff9b49', '#39e4b5', '#ff5fd2', '#ffd56b', '#8da2ff', '#ff6489'][index % 7];
+  }
+
+  function compactDate(date) {
+    return String(date || '').slice(8, 10) + '/' + String(date || '').slice(5, 7);
+  }
+
+  function utcDate(iso) {
+    var parts = String(iso || '').split('-').map(Number);
+    return new Date(Date.UTC(parts[0] || 1970, (parts[1] || 1) - 1, parts[2] || 1));
+  }
+
+  function isoFromDate(date) {
+    return date.getUTCFullYear() + '-' + pad2(date.getUTCMonth() + 1) + '-' + pad2(date.getUTCDate());
+  }
+
+  function addDays(iso, amount) {
+    var date = utcDate(iso);
+    date.setUTCDate(date.getUTCDate() + amount);
+    return isoFromDate(date);
+  }
+
+  function weeklyWindows(list) {
+    var dates = unique(list.map(function (row) { return row.date; })).sort();
+    if (!dates.length) return [['Filtro atual', filters.start || '0000-00-00', filters.end || '9999-99-99']];
+    var start = dates[0];
+    var end = dates[dates.length - 1];
+    var cursor = start;
+    var output = [];
+    while (cursor <= end && output.length < 20) {
+      var windowEnd = addDays(cursor, 6);
+      if (windowEnd > end) windowEnd = end;
+      output.push([compactDate(cursor) + ' a ' + compactDate(windowEnd), cursor, windowEnd]);
+      cursor = addDays(windowEnd, 1);
+    }
+    output.push(['Filtro atual', filters.start || start, filters.end || end]);
+    return output;
+  }
+
+  function svgPoint(x, y) {
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }
+
+  function neonTrendChart(days) {
+    if (!days.length) return '<p class="empty">Sem dados no recorte atual.</p>';
+    var width = 860;
+    var height = 286;
+    var left = 42;
+    var right = 28;
+    var top = 24;
+    var bottom = 42;
+    var innerW = width - left - right;
+    var innerH = height - top - bottom;
+    var series = [
+      { key: 'total', label: 'Leads', color: '#58e6ff' },
+      { key: 'sql', label: 'SQL', color: '#ffd56b' },
+      { key: 'purchase', label: 'Compras', color: '#39e4b5' }
+    ];
+    var maxValue = Math.max.apply(null, days.map(function (day) {
+      return Math.max(day.m.total, day.m.sql, day.m.purchase);
+    }).concat([1]));
+    function x(index) {
+      return left + (days.length === 1 ? innerW / 2 : (index / (days.length - 1)) * innerW);
+    }
+    function y(value) {
+      return top + innerH - div(value, maxValue) * innerH;
+    }
+    var grid = [0, .25, .5, .75, 1].map(function (step) {
+      var yy = top + innerH - step * innerH;
+      return '<line class="viz-grid-line" x1="' + left + '" x2="' + (width - right) + '" y1="' + yy + '" y2="' + yy + '"></line>' +
+        '<text class="viz-axis-label" x="8" y="' + (yy + 4) + '">' + fmt(maxValue * step) + '</text>';
+    }).join('');
+    var stepLabel = Math.max(1, Math.ceil(days.length / 8));
+    var labels = days.map(function (day, index) {
+      if (index !== 0 && index !== days.length - 1 && index % stepLabel !== 0) return '';
+      return '<text class="viz-axis-label" x="' + x(index) + '" y="' + (height - 12) + '" text-anchor="middle">' + esc(compactDate(day.key)) + '</text>';
+    }).join('');
+    var lines = series.map(function (serie) {
+      var points = days.map(function (day, index) { return svgPoint(x(index), y(day.m[serie.key])); }).join(' ');
+      var last = days[days.length - 1];
+      return '<polyline class="viz-line" points="' + points + '" style="--line:' + serie.color + '"></polyline>' +
+        '<circle class="viz-dot" cx="' + x(days.length - 1) + '" cy="' + y(last.m[serie.key]) + '" r="4" style="--line:' + serie.color + '"></circle>' +
+        '<text class="viz-direct-label" x="' + (x(days.length - 1) - 6) + '" y="' + (y(last.m[serie.key]) - 8) + '" text-anchor="end">' + esc(serie.label) + '</text>';
+    }).join('');
+    return '<div class="viz-shell">' +
+      '<svg class="trend-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Tendencia diaria de leads SQL e compras">' +
+      '<defs><linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#58e6ff" stop-opacity=".20"/><stop offset="100%" stop-color="#58e6ff" stop-opacity="0"/></linearGradient></defs>' +
+      grid + labels + lines +
+      '</svg>' +
+      '<div class="viz-legend">' + series.map(function (serie) {
+        return '<span><i style="--dot:' + serie.color + '"></i>' + esc(serie.label) + '</span>';
+      }).join('') + '</div>' +
+      '</div>';
+  }
+
+  function donutChart(groups, total) {
+    if (!groups.length || !total) return '<p class="empty">Sem origem no recorte atual.</p>';
+    var cursor = 0;
+    var stops = groups.slice(0, 6).map(function (group, index) {
+      var start = cursor;
+      var end = cursor + div(group.m.total, total) * 100;
+      cursor = end;
+      return chartColor(index) + ' ' + start.toFixed(2) + '% ' + end.toFixed(2) + '%';
+    }).join(', ');
+    return '<div class="donut-layout">' +
+      '<div class="donut-chart" style="background:conic-gradient(' + stops + ', rgba(255,255,255,.06) ' + cursor.toFixed(2) + '% 100%)">' +
+      '<div><strong>' + fmt(total) + '</strong><span>Lead IDs</span></div></div>' +
+      '<div class="donut-legend">' + groups.slice(0, 6).map(function (group, index) {
+        return '<button type="button" data-origin-filter="' + esc(group.key) + '">' +
+          '<i style="--dot:' + chartColor(index) + '"></i><b>' + esc(group.key) + '</b>' +
+          '<span>' + fmt(group.m.total) + ' | ' + pct(group.m.conversion) + '</span></button>';
+      }).join('') + '</div></div>';
+  }
+
+  function executiveFunnelChart(m) {
+    var stages = [
+      ['Lead ID', 'all', m.total],
+      ['MQL', 'mql', m.mql],
+      ['SQL', 'sql', m.sql],
+      ['Oportunidade', 'opportunity', m.opportunity],
+      ['Compra', 'purchase', m.purchase],
+      ['Perda registrada', 'lost', m.loss]
+    ];
+    var max = Math.max(1, m.total);
+    return '<div class="funnel-viz">' + stages.map(function (stage, index) {
+      var width = Math.max(6, div(stage[2], max) * 100);
+      var previous = index ? stages[index - 1][2] : max;
+      var leak = Math.max(0, previous - stage[2]);
+      return '<button class="funnel-viz-row" type="button" data-stage-filter="' + esc(stage[1]) + '">' +
+        '<span class="funnel-viz-name">' + esc(stage[0]) + '</span>' +
+        '<span class="funnel-viz-bar"><i style="--w:' + width + '%;--c:' + chartColor(index) + '"></i></span>' +
+        '<strong>' + fmt(stage[2]) + '</strong>' +
+        '<small>' + (index ? '-' + fmt(leak) + ' da etapa anterior' : 'base do recorte') + '</small>' +
+        '</button>';
+    }).join('') + '</div>';
+  }
+
+  function sellerRankingChart(groups) {
+    if (!groups.length) return '<p class="empty">Sem responsavel no recorte atual.</p>';
+    var ranked = groups.slice().sort(function (a, b) {
+      return b.m.purchase - a.m.purchase || b.m.conversion - a.m.conversion || b.m.total - a.m.total;
+    }).slice(0, 7);
+    var max = Math.max.apply(null, ranked.map(function (group) { return group.m.purchase; }).concat([1]));
+    return '<div class="rank-list">' + ranked.map(function (group, index) {
+      var width = Math.max(4, div(group.m.purchase, max) * 100);
+      return '<button class="rank-row" type="button" data-seller-filter="' + esc(group.key) + '">' +
+        '<span class="rank-index">' + String(index + 1).padStart(2, '0') + '</span>' +
+        '<span class="rank-main"><b>' + esc(group.key) + '</b><i><em style="--w:' + width + '%;--c:' + chartColor(index) + '"></em></i></span>' +
+        '<span class="rank-metrics"><strong>' + fmt(group.m.purchase) + '</strong><small>' + pct(group.m.conversion) + '</small></span>' +
+        '</button>';
+    }).join('') + '</div>';
+  }
+
+  function heatmapChart(groups) {
+    if (!groups.length) return '<p class="empty">Sem dados para heatmap.</p>';
+    var stages = [
+      ['Leads', 'total'],
+      ['MQL', 'mql'],
+      ['SQL', 'sql'],
+      ['Opp', 'opportunity'],
+      ['Compra', 'purchase'],
+      ['Perda', 'loss']
+    ];
+    var ranked = groups.slice().sort(function (a, b) { return b.m.total - a.m.total; }).slice(0, 7);
+    var max = Math.max.apply(null, ranked.reduce(function (acc, group) {
+      stages.forEach(function (stage) { acc.push(group.m[stage[1]]); });
+      return acc;
+    }, [1]));
+    return '<div class="heatmap-scroll"><div class="heatmap-grid" style="grid-template-columns:minmax(170px,1.15fr) repeat(' + stages.length + ',minmax(78px,.62fr))">' +
+      '<div class="heat-head">Responsavel</div>' + stages.map(function (stage) {
+        return '<div class="heat-head">' + esc(stage[0]) + '</div>';
+      }).join('') +
+      ranked.map(function (group) {
+        return '<div class="heat-name">' + esc(group.key) + '</div>' + stages.map(function (stage, index) {
+          var value = group.m[stage[1]];
+          var intensity = Math.max(.08, Math.min(.72, div(value, max) * .72));
+          return '<div class="heat-cell" style="--a:' + intensity.toFixed(2) + ';--c:' + chartColor(index) + '"><b>' + fmt(value) + '</b><span>' + pct(div(value, group.m.total)) + '</span></div>';
+        }).join('');
+      }).join('') +
+      '</div></div>';
+  }
+
   function topReason(list) {
     var reasons = groupBy(list.filter(function (row) { return row.lossReason; }), function (row) { return row.lossReason; })
       .sort(function (a, b) { return b.m.total - a.m.total; });
@@ -522,7 +820,7 @@
   }
 
   function renderShell(m, restriction) {
-    text('sourceLabel', 'Fonte: cache GrowthPack | ' + fmt(rows.length) + ' Lead IDs');
+    text('sourceLabel', 'Fonte: ' + sourceInfo());
     set('statusLine',
       '<span class="pill"><b>Leads:</b> ' + fmt(m.total) + '</span>' +
       '<span class="pill"><b>Compras:</b> ' + fmt(m.purchase) + ' (' + pct(m.conversion) + ')</span>' +
@@ -536,6 +834,19 @@
       '<div><b>' + money(m.ticket) + '</b><span>ticket</span></div>' +
       '<div><b>' + Math.round(restriction.current.score) + '</b><span>score restrição</span></div>'
     );
+  }
+
+  function renderBiCommand(m) {
+    var days = groupBy(filtered, function (row) { return row.date; }).sort(function (a, b) { return a.key.localeCompare(b.key); });
+    var origins = groupBy(filtered, function (row) { return row.origin; }).sort(function (a, b) {
+      return b.m.total - a.m.total || b.m.purchase - a.m.purchase;
+    });
+    var sellers = groupBy(filtered, function (row) { return row.seller; });
+    set('biTrendChart', neonTrendChart(days));
+    set('biOriginDonut', donutChart(origins, m.total));
+    set('biFunnelVisual', executiveFunnelChart(m));
+    set('biSellerRanking', sellerRankingChart(sellers));
+    set('biHeatmap', heatmapChart(sellers));
   }
 
   function renderOverview(m, restriction) {
@@ -569,6 +880,8 @@
     set('dailyBars', '<div class="bar-list">' + days.map(function (day) {
       return bar(day.key.slice(5), day.m.total, maxDay, fmt(day.m.total) + ' leads | ' + fmt(day.m.purchase) + ' compras');
     }).join('') + '</div>');
+
+    renderBiCommand(m);
 
     var metaShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).total);
     var googleShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).total);
@@ -1005,12 +1318,7 @@
       ]
     ));
 
-    var windows = [
-      ['01 a 07/06', '2026-06-01', '2026-06-07'],
-      ['08 a 14/06', '2026-06-08', '2026-06-14'],
-      ['15 a 18/06', '2026-06-15', '2026-06-18'],
-      ['Filtro atual', filters.start || '0000-00-00', filters.end || '9999-99-99']
-    ];
+    var windows = weeklyWindows(filtered);
     set('periodCompare', table(
       ['Janela', 'Leads', 'Compras', 'Conversão', 'Motivos', 'Valor'],
       windows.map(function (windowRange) {
@@ -1131,7 +1439,7 @@
 
   function renderStatus(m) {
     set('statusKpis',
-      kpi('Fonte ativa', 'GrowthPack', fmt(rows.length) + ' Lead IDs carregados') +
+      kpi('Fonte ativa', esc(dataSourceLabel), fmt(rows.length) + ' Lead IDs carregados') +
       kpi('Registros filtrados', fmt(m.total), 'escopo atual') +
       kpi('Health CRM', pct(m.health), fmt(m.dataIssues) + ' pontos de atenção') +
       kpi('Atualização visual', new Date().toLocaleTimeString('pt-BR'), 'horário local')
@@ -1177,7 +1485,7 @@
     var current = restriction.current;
     var days = daysInSelection(filtered);
     var openOpps = Math.max(0, m.opportunity - m.purchase);
-    var dateRange = (filters.start || '2026-06-01').slice(5) + ' a ' + (filters.end || '2026-06-18').slice(5);
+    var dateRange = (filters.start || dataBounds.start || '').slice(5) + ' a ' + (filters.end || dataBounds.end || '').slice(5);
     var sellers = groupBy(filtered, function (row) { return row.seller; });
     var sellersByPurchase = sellers.slice().sort(function (a, b) { return b.m.purchase - a.m.purchase || b.m.conversion - a.m.conversion; });
     var sellersByConversion = sellers.slice().sort(function (a, b) { return b.m.conversion - a.m.conversion || b.m.purchase - a.m.purchase; });
@@ -1599,7 +1907,7 @@
     var current = restriction.current;
     var context = buildHeroContext(m, restriction);
 
-    text('sourceLabel', 'Fonte: cache GrowthPack | ' + fmt(rows.length) + ' Lead IDs');
+    text('sourceLabel', 'Fonte: ' + sourceInfo());
     text('sidebarRestriction', current.key);
     text('sidebarSupportText', current.action);
     text('heroKicker', context.kicker);
@@ -1894,12 +2202,7 @@
       ]
     ));
 
-    var windows = [
-      ['01 a 07/06', '2026-06-01', '2026-06-07'],
-      ['08 a 14/06', '2026-06-08', '2026-06-14'],
-      ['15 a 18/06', '2026-06-15', '2026-06-18'],
-      ['Filtro atual', filters.start || '0000-00-00', filters.end || '9999-99-99']
-    ];
+    var windows = weeklyWindows(filtered);
     set('periodCompare', table(
       ['Janela', 'Leads', 'Compras', 'Conversão', 'Motivos', 'Valor'],
       windows.map(function (windowRange) {
@@ -1944,8 +2247,8 @@
     if ($('fSearch')) $('fSearch').addEventListener('input', function () { readFilters(); renderAll(); });
     if ($('applyFilters')) $('applyFilters').addEventListener('click', function () { readFilters(); renderAll(); toast('Filtro aplicado: ' + fmt(filtered.length) + ' Lead IDs'); });
     if ($('clearFilters')) $('clearFilters').addEventListener('click', function () { resetFilters(); toast('Filtros limpos'); });
-    if ($('syncBtn')) $('syncBtn').addEventListener('click', function () { loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + fmt(rows.length) + ' Lead IDs'); });
-    if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: cache local GrowthPack com ' + fmt(rows.length) + ' Lead IDs.'); });
+    if ($('syncBtn')) $('syncBtn').addEventListener('click', async function () { await loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + sourceInfo()); });
+    if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: ' + sourceInfo()); });
     if ($('toggleFilters') && $('filtersPanel')) {
       $('toggleFilters').addEventListener('click', function () {
         $('filtersPanel').classList.toggle('collapsed');
@@ -1998,9 +2301,9 @@
     });
   }
 
-  function bootLegacyUnused() {
+  async function bootLegacyUnused() {
     try {
-      loadRows();
+      await loadRows();
       fillFilters();
       bind();
       updateWorkspaceHead();
@@ -2043,6 +2346,7 @@
       restriction: restriction,
       render: renderAll
     };
+    try { window.dispatchEvent(new CustomEvent('st1-dashboard-rendered')); } catch (error) {}
   }
 
   function toast(message) {
@@ -2055,16 +2359,7 @@
   }
 
   function resetFilters() {
-    filters = {
-      start: '2026-06-01',
-      end: '2026-06-18',
-      seller: 'all',
-      origin: 'all',
-      stage: 'all',
-      reason: 'all',
-      category: 'all',
-      search: ''
-    };
+    filters = defaultFilterState();
     fillFilters();
     renderAll();
   }
@@ -2094,8 +2389,8 @@
     if ($('fSearch')) $('fSearch').addEventListener('input', function () { readFilters(); renderAll(); });
     if ($('applyFilters')) $('applyFilters').addEventListener('click', function () { readFilters(); renderAll(); toast('Filtro aplicado: ' + fmt(filtered.length) + ' Lead IDs'); });
     if ($('clearFilters')) $('clearFilters').addEventListener('click', function () { resetFilters(); toast('Filtros limpos'); });
-    if ($('syncBtn')) $('syncBtn').addEventListener('click', function () { loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + fmt(rows.length) + ' Lead IDs'); });
-    if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: cache local GrowthPack com ' + fmt(rows.length) + ' Lead IDs.'); });
+    if ($('syncBtn')) $('syncBtn').addEventListener('click', async function () { await loadRows(); fillFilters(); renderAll(); toast('GrowthPack sincronizado: ' + sourceInfo()); });
+    if ($('sourceBtn')) $('sourceBtn').addEventListener('click', function () { toast('Fonte ativa: ' + sourceInfo()); });
     if ($('toggleFilters') && $('filtersPanel')) {
       $('toggleFilters').addEventListener('click', function () {
         $('filtersPanel').classList.toggle('collapsed');
@@ -2154,6 +2449,22 @@
         applyQuickFilter(quickFilter.getAttribute('data-quick-filter'));
         return;
       }
+      var originFilter = event.target && event.target.closest ? event.target.closest('[data-origin-filter]') : null;
+      if (originFilter) {
+        filters.origin = originFilter.getAttribute('data-origin-filter') || 'all';
+        fillFilters();
+        renderAll();
+        toast('Origem aplicada: ' + filters.origin + ' | ' + fmt(filtered.length) + ' Lead IDs');
+        return;
+      }
+      var sellerFilter = event.target && event.target.closest ? event.target.closest('[data-seller-filter]') : null;
+      if (sellerFilter) {
+        filters.seller = sellerFilter.getAttribute('data-seller-filter') || 'all';
+        fillFilters();
+        renderAll();
+        toast('Responsavel aplicado: ' + filters.seller + ' | ' + fmt(filtered.length) + ' Lead IDs');
+        return;
+      }
       var index = event.target && event.target.getAttribute('data-remove-fca');
       if (index == null) return;
       var items = getFcas();
@@ -2176,9 +2487,9 @@
     document.body.insertAdjacentHTML('afterbegin', '<div class="error-banner">Erro no dashboard: ' + esc(error.message || error) + '</div>');
   }
 
-  function boot() {
+  async function boot() {
     try {
-      loadRows();
+      await loadRows();
       fillFilters();
       bind();
       updateWorkspaceHead();
@@ -2186,7 +2497,7 @@
       startClock();
       renderAll();
       window.addEventListener('load', initIcons, { once: true });
-      toast('ST1 Command Center ativo: ' + fmt(rows.length) + ' Lead IDs');
+      toast('ST1 Command Center ativo: ' + sourceInfo());
     } catch (error) {
       showError(error);
     }

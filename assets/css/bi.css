@@ -18,6 +18,8 @@
   --green: #39e4b5;
   --red: #ff6489;
   --yellow: #ffd56b;
+  --magenta: #ff5fd2;
+  --lime: #b8ff6a;
   --shadow: 0 30px 92px rgba(0, 0, 0, 0.46);
   --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.24);
   --radius-xl: 30px;
@@ -969,6 +971,384 @@ textarea:focus {
   animation: grow 0.55s ease both;
 }
 
+.card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.card-title-row .panel-label {
+  text-align: right;
+  line-height: 1.35;
+}
+
+.bi-command-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.72fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.bi-panel--wide {
+  grid-column: span 2;
+}
+
+.neon-panel {
+  overflow: visible;
+  border-color: rgba(88, 230, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(7, 14, 24, 0.88), rgba(2, 6, 12, 0.98)),
+    linear-gradient(115deg, rgba(255, 155, 73, 0.12), transparent 34%),
+    linear-gradient(245deg, rgba(88, 230, 255, 0.16), transparent 44%);
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(88, 230, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.neon-panel > *,
+.card-title-row,
+.card-title-row h3,
+.funnel-viz,
+.rank-list,
+.donut-layout {
+  min-width: 0;
+}
+
+.viz-shell {
+  display: grid;
+  gap: 12px;
+  min-height: 316px;
+}
+
+.trend-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 260px;
+  overflow: visible;
+}
+
+.viz-grid-line {
+  stroke: rgba(154, 179, 204, 0.13);
+  stroke-width: 1;
+}
+
+.viz-axis-label,
+.viz-direct-label {
+  fill: rgba(207, 223, 238, 0.74);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.viz-direct-label {
+  fill: #fff;
+  paint-order: stroke;
+  stroke: rgba(2, 6, 12, 0.84);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.viz-line {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--line), transparent 50%));
+}
+
+.viz-dot {
+  fill: var(--line);
+  stroke: rgba(2, 6, 12, 0.92);
+  stroke-width: 3px;
+}
+
+.viz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.viz-legend span,
+.donut-legend button,
+.rank-row,
+.funnel-viz-row {
+  border: 1px solid rgba(154, 179, 204, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.viz-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.viz-legend i,
+.donut-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--dot);
+  box-shadow: 0 0 16px var(--dot);
+}
+
+.donut-layout {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.78fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 260px;
+}
+
+.donut-chart {
+  position: relative;
+  width: min(100%, 210px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  box-shadow: 0 0 40px rgba(88, 230, 255, 0.12), inset 0 0 18px rgba(255, 255, 255, 0.08);
+}
+
+.donut-chart::after {
+  content: "";
+  position: absolute;
+  inset: 25%;
+  border-radius: inherit;
+  background: #050b12;
+  border: 1px solid rgba(154, 179, 204, 0.14);
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.48);
+}
+
+.donut-chart div {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.donut-chart strong {
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 0.95;
+}
+
+.donut-chart span,
+.rank-row small,
+.funnel-viz-row small,
+.heat-cell span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.donut-legend,
+.rank-list,
+.funnel-viz {
+  display: grid;
+  gap: 10px;
+}
+
+.donut-legend button {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  text-align: left;
+}
+
+.donut-legend button:hover,
+.rank-row:hover,
+.funnel-viz-row:hover {
+  border-color: rgba(88, 230, 255, 0.32);
+  background: rgba(88, 230, 255, 0.08);
+}
+
+.donut-legend b,
+.rank-main b,
+.funnel-viz-name {
+  overflow: hidden;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.donut-legend span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.funnel-viz-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.72fr) minmax(82px, 1fr) minmax(54px, auto);
+  gap: 8px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  padding: 11px 10px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.funnel-viz-row small {
+  grid-column: 2 / 4;
+  text-align: right;
+}
+
+.funnel-viz-bar {
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(154, 179, 204, 0.1);
+}
+
+.funnel-viz-bar i {
+  display: block;
+  width: var(--w);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c), rgba(255, 255, 255, 0.52));
+  box-shadow: 0 0 18px var(--c);
+}
+
+.funnel-viz-row strong {
+  color: #fff;
+  font-size: 16px;
+  text-align: right;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(70px, auto);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.rank-index {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(88, 230, 255, 0.12);
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.rank-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rank-main i {
+  display: block;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.rank-main em {
+  display: block;
+  width: var(--w);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c), rgba(255, 255, 255, 0.5));
+  box-shadow: 0 0 18px var(--c);
+}
+
+.rank-metrics {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+.rank-metrics strong {
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.heatmap-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.heatmap-grid {
+  min-width: 780px;
+  display: grid;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.heat-head,
+.heat-name,
+.heat-cell {
+  border: 1px solid rgba(154, 179, 204, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.heat-head {
+  padding: 9px 10px;
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.heat-name {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.heat-cell {
+  min-height: 56px;
+  padding: 10px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border-left-color: var(--c);
+  background: linear-gradient(135deg, rgba(88, 230, 255, var(--a)), rgba(255, 155, 73, 0.05));
+}
+
+.heat-cell b {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+}
+
 @keyframes grow {
   from { width: 0; }
   to { width: var(--w); }
@@ -1593,8 +1973,13 @@ tr.total td {
 
   .workspace-topbar,
   .hero-main-grid,
-  .grid-2 {
+  .grid-2,
+  .bi-command-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bi-panel--wide {
+    grid-column: auto;
   }
 
   .hero-main-grid {
@@ -1670,6 +2055,23 @@ tr.total td {
     grid-template-columns: 1fr;
   }
 
+  .donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .funnel-viz-row,
+  .rank-row {
+    grid-template-columns: 1fr;
+  }
+
+  .funnel-viz-row small,
+  .funnel-viz-row strong,
+  .rank-metrics {
+    grid-column: auto;
+    justify-items: start;
+    text-align: left;
+  }
+
   .bar-row span,
   .funnel-row span {
     text-align: left;
@@ -1700,6 +2102,30 @@ tr.total td {
   .seller,
   .insight-card {
     border-radius: 20px;
+  }
+
+  .card-title-row {
+    display: grid;
+  }
+
+  .card-title-row .panel-label {
+    text-align: left;
+  }
+
+  .viz-shell {
+    min-height: 248px;
+  }
+
+  .trend-svg {
+    min-height: 220px;
+  }
+
+  .donut-chart {
+    width: min(220px, 82vw);
+  }
+
+  .heatmap-grid {
+    min-width: 720px;
   }
 
   .brand {

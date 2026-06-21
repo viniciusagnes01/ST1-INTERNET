@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
   <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
   <link rel="icon" href="assets/img/st1-logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/css/bi.css?v=bi-013">
+  <link rel="stylesheet" href="assets/css/bi.css?v=bi-016">
 </head>
 <body>
   <div class="dashboard-shell">
@@ -178,8 +178,8 @@
         </div>
 
         <div class="filter-grid">
-          <label>Data inicial<input type="date" id="fStart" value="2026-06-01"></label>
-          <label>Data final<input type="date" id="fEnd" value="2026-06-18"></label>
+          <label>Data inicial<input type="date" id="fStart"></label>
+          <label>Data final<input type="date" id="fEnd"></label>
           <label>Vendedora<select id="fSeller"></select></label>
           <label>Origem<select id="fOrigin"></select></label>
           <label>Etapa
@@ -258,6 +258,43 @@
             </div>
           </div>
           <div class="kpi-grid" id="globalKpis"></div>
+          <div class="bi-command-grid">
+            <article class="card glass neon-panel bi-panel--wide">
+              <div class="card-title-row">
+                <h3>Radar temporal GrowthPack</h3>
+                <span class="panel-label">Leads | SQL | Compras</span>
+              </div>
+              <div id="biTrendChart"></div>
+            </article>
+            <article class="card glass neon-panel">
+              <div class="card-title-row">
+                <h3>Mix de origem</h3>
+                <span class="panel-label">Volume e conversao</span>
+              </div>
+              <div id="biOriginDonut"></div>
+            </article>
+            <article class="card glass neon-panel">
+              <div class="card-title-row">
+                <h3>Funil executivo</h3>
+                <span class="panel-label">Queda por etapa</span>
+              </div>
+              <div id="biFunnelVisual"></div>
+            </article>
+            <article class="card glass neon-panel">
+              <div class="card-title-row">
+                <h3>Ranking comercial</h3>
+                <span class="panel-label">Compras e conversao</span>
+              </div>
+              <div id="biSellerRanking"></div>
+            </article>
+            <article class="card glass neon-panel bi-panel--wide">
+              <div class="card-title-row">
+                <h3>Heatmap operacional</h3>
+                <span class="panel-label">Responsavel x etapa</span>
+              </div>
+              <div id="biHeatmap"></div>
+            </article>
+          </div>
           <div class="grid-2">
             <article class="card glass">
               <h3>Funil operacional</h3>
@@ -598,6 +635,6 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="assets/js/main.js?v=bi-013"></script>
+  <script type="module" src="assets/js/main.js?v=bi-016"></script>
 </body>
 </html>
