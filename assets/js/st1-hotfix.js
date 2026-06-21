@@ -251,13 +251,19 @@
     return dataSourceLabel + updated + ' | ' + fmt(rows.length) + ' Lead IDs';
   }
 
-  async function fetchJson(url) {
+  async function fetchJson(url, timeoutMs) {
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, timeoutMs || 4500) : null;
     try {
-      var response = await fetch(url, { cache: 'no-store' });
+      var options = { cache: 'no-store' };
+      if (controller) options.signal = controller.signal;
+      var response = await fetch(url, options);
       if (!response.ok) throw new Error('HTTP ' + response.status);
       return await response.json();
     } catch (error) {
       return null;
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -280,7 +286,7 @@
     var updatedAt = '';
 
     if (typeof fetch === 'function' && window.location.protocol !== 'file:') {
-      var apiPayload = await fetchJson('/api/growthpack');
+      var apiPayload = await fetchJson('/api/growthpack', 2600);
       if (apiPayload && apiPayload.ok && Array.isArray(apiPayload.records) && apiPayload.records.length) {
         source = apiPayload.records;
         label = 'GrowthPack API';
@@ -288,7 +294,7 @@
       }
 
       if (!source.length) {
-        var fullJson = await fetchJson('data/growthpack-base-crm.json');
+        var fullJson = await fetchJson('data/growthpack-base-crm.json', 7000);
         if (Array.isArray(fullJson) && fullJson.length) {
           source = fullJson;
           label = 'GrowthPack JSON completo';
