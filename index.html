@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#03060b">
-  <title>ST1 Internet | Cockpit V4 ON</title>
+  <title>ST1 Internet | Command Center Executivo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
   <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <link rel="icon" href="assets/img/st1-logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/bi.css?v=bi-013">
 </head>
 <body>
@@ -19,13 +20,17 @@
           <img src="assets/img/st1-logo.svg" alt="ST1 Internet">
           <span class="brand-copy">
             <strong>ST1 Internet</strong>
-            <small>Command Center | V4 ON</small>
+            <small>Command Center | Liderança</small>
           </span>
         </a>
 
         <div class="sidebar-group">
-          <span class="sidebar-label">Cockpit</span>
+          <span class="sidebar-label">Command Center</span>
           <nav class="sidebar-nav" aria-label="Navegação principal">
+            <button class="tab side-tab" data-tab="council" type="button">
+              <span class="tab-icon"><i data-lucide="brain-circuit"></i></span>
+              <span class="tab-copy"><strong>Conselho</strong><small>TOC, decisão e plano</small></span>
+            </button>
             <button class="tab side-tab active" data-tab="overview" type="button">
               <span class="tab-icon"><i data-lucide="layout-dashboard"></i></span>
               <span class="tab-copy"><strong>Visão Geral</strong><small>Receita, CRM e ritmo</small></span>
@@ -76,7 +81,7 @@
             </button>
             <button class="tab side-tab" data-tab="fca" type="button">
               <span class="tab-icon"><i data-lucide="clipboard-pen-line"></i></span>
-              <span class="tab-copy"><strong>FCA</strong><small>Registro manual do gestor</small></span>
+              <span class="tab-copy"><strong>FCA</strong><small>Fato, causa e ação</small></span>
             </button>
             <button class="tab side-tab" data-tab="handoff" type="button">
               <span class="tab-icon"><i data-lucide="between-horizontal-start"></i></span>
@@ -100,7 +105,7 @@
     <div class="workspace">
       <header class="workspace-topbar glass">
         <div class="workspace-context">
-          <span class="workspace-breadcrumb" id="activeSectionEyebrow">Cockpit / Visão Geral</span>
+          <span class="workspace-breadcrumb" id="activeSectionEyebrow">Command Center / Visão Geral</span>
           <h1 class="workspace-title" id="activeSectionTitle">Visão Geral</h1>
           <p class="workspace-copy" id="activeSectionCopy">Receita, CRM e gargalos da operacao em uma leitura mais limpa e objetiva.</p>
         </div>
@@ -134,10 +139,10 @@
 
         <div class="hero-main-grid">
           <article class="hero-card hero-story glass">
-            <div class="eyebrow"><span class="dot"></span>ST1 Internet | War Room V4 ON</div>
+            <div class="eyebrow"><span class="dot"></span>ST1 Internet | Painel Executivo</div>
             <div class="hero-story-grid">
               <div class="hero-copy-block">
-                <p class="hero-kicker" id="heroKicker">Cockpit de Receita e Restrição</p>
+                <p class="hero-kicker" id="heroKicker">Painel de Receita e Restrição</p>
                 <h2 id="heroTitle">Onde a receita está travando agora</h2>
                 <p id="heroCopy">Leitura executiva da operacao conectando receita, CRM, capacidade e execucao sem poluir a analise.</p>
                 <div class="statusline" id="statusLine"></div>
@@ -191,9 +196,60 @@
           <label>Motivo<select id="fReason"></select></label>
           <label>Categoria<select id="fCategory"></select></label>
         </div>
+        <div class="filter-intelligence">
+          <div>
+            <span class="panel-label">Filtros inteligentes</span>
+            <div class="quick-filter-grid" id="quickFilterChips"></div>
+          </div>
+          <div class="active-filter-summary" id="activeFilterSummary"></div>
+        </div>
       </section>
 
       <main class="workspace-main">
+        <section class="panel" id="council">
+          <div class="section-head">
+            <div>
+              <h2>Conselho Executivo</h2>
+              <p>Leitura de CEO, CFO, COO, Growth e TOC para decidir o que destrava receita agora.</p>
+            </div>
+          </div>
+          <div class="kpi-grid" id="councilKpis"></div>
+          <article class="card glass decision-card">
+            <h3>Veredito executivo</h3>
+            <div id="councilVerdict"></div>
+          </article>
+          <div class="grid-2 split-grid split-grid--wide">
+            <article class="card glass">
+              <h3>Scorecard de decisão</h3>
+              <div id="councilScorecard"></div>
+            </article>
+            <article class="card glass">
+              <h3>Mapa TOC</h3>
+              <div class="table-wrap" id="councilTocTable"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Killer assumptions</h3>
+              <div class="table-wrap" id="councilAssumptions"></div>
+            </article>
+            <article class="card glass">
+              <h3>Plano 7/14/30</h3>
+              <div class="table-wrap" id="councilPlan"></div>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card glass">
+              <h3>Guardrails executivos</h3>
+              <div class="table-wrap" id="councilGuardrails"></div>
+            </article>
+            <article class="card glass">
+              <h3>Mapa de decisão por restrição</h3>
+              <div class="table-wrap" id="councilDecisionMap"></div>
+            </article>
+          </div>
+        </section>
+
         <section class="panel active" id="overview">
           <div class="section-head">
             <div>
@@ -204,7 +260,7 @@
           <div class="kpi-grid" id="globalKpis"></div>
           <div class="grid-2">
             <article class="card glass">
-              <h3>Funil V4 ON</h3>
+              <h3>Funil operacional</h3>
               <div id="funnelChart"></div>
             </article>
             <article class="card glass">
@@ -273,7 +329,7 @@
               <div class="table-wrap" id="priorityQueueTable"></div>
             </article>
             <article class="card glass">
-              <h3>Leitura PCP V4 ON</h3>
+              <h3>Leitura executiva PCP</h3>
               <div id="pcpInsights"></div>
             </article>
           </div>
@@ -478,7 +534,7 @@
               <div id="fcaList"></div>
             </article>
             <article class="card glass">
-              <h3>Tasks sugeridas V4 ON</h3>
+            <h3>Ações sugeridas</h3>
               <div class="table-wrap" id="taskTable"></div>
             </article>
           </div>
@@ -533,7 +589,7 @@
             </article>
           </div>
           <article class="card glass">
-            <h3>Arquitetura V4 ON</h3>
+            <h3>Arquitetura operacional</h3>
             <div class="table-wrap" id="architectureTable"></div>
           </article>
         </section>

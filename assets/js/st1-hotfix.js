@@ -16,18 +16,19 @@
   };
 
   var tabMeta = {
-    overview: { eyebrow: 'Cockpit / Visão Geral', title: 'Visão Geral', copy: 'Receita, CRM e gargalos da operação em uma leitura só.' },
-    restriction: { eyebrow: 'Cockpit / Restrição', title: 'Restrição', copy: 'Gargalo dominante do sistema com ação, dono e prazo.' },
-    pcp: { eyebrow: 'Cockpit / PCP Comercial', title: 'PCP Comercial', copy: 'Capacidade, fila e aging para priorizar o dia.' },
-    commercial: { eyebrow: 'Cockpit / Comercial', title: 'Comercial', copy: 'Conversão, ticket e vazamentos por vendedora.' },
-    media: { eyebrow: 'Cockpit / Mídia', title: 'Mídia', copy: 'Canal, intenção e impacto real sobre receita.' },
-    service: { eyebrow: 'Cockpit / Atendimento', title: 'Atendimento', copy: 'Entrada, transbordo humano e risco de SLA.' },
-    retention: { eyebrow: 'Cockpit / Retenção', title: 'Retenção', copy: 'Pós-venda, reativação e expansão com foco prático.' },
-    losses: { eyebrow: 'Cockpit / Perdas', title: 'Perdas', copy: 'Motivos de perda organizados por impacto e correção.' },
-    targets: { eyebrow: 'Cockpit / Metas', title: 'Metas', copy: 'Run rate, forecast e gap de meta sem excesso de ruído.' },
-    fca: { eyebrow: 'Cockpit / FCA', title: 'FCA', copy: 'Fato, causa e ação com acompanhamento direto.' },
-    handoff: { eyebrow: 'Cockpit / Handoff', title: 'Handoff', copy: 'Contexto, riscos e próximos passos sem perder continuidade.' },
-    status: { eyebrow: 'Cockpit / Sistema', title: 'Sistema', copy: 'Saúde da base e governança para decidir com dado confiável.' }
+    council: { eyebrow: 'Command Center / Conselho Executivo', title: 'Conselho Executivo', copy: 'TOC, unit economics, risco e plano de ação para destravar receita.' },
+    overview: { eyebrow: 'Command Center / Visão Geral', title: 'Visão Geral', copy: 'Receita, CRM e gargalos operacionais em uma leitura executiva.' },
+    restriction: { eyebrow: 'Command Center / Restrição', title: 'Restrição', copy: 'Gargalo dominante do sistema com ação, responsável e prazo.' },
+    pcp: { eyebrow: 'Command Center / PCP Comercial', title: 'PCP Comercial', copy: 'Capacidade, fila e aging para priorização operacional.' },
+    commercial: { eyebrow: 'Command Center / Comercial', title: 'Comercial', copy: 'Conversão, ticket e vazamentos por responsável comercial.' },
+    media: { eyebrow: 'Command Center / Mídia', title: 'Mídia', copy: 'Canal, intenção e impacto real sobre receita.' },
+    service: { eyebrow: 'Command Center / Atendimento', title: 'Atendimento', copy: 'Entrada, transbordo humano e risco de SLA.' },
+    retention: { eyebrow: 'Command Center / Retenção', title: 'Retenção', copy: 'Pós-venda, reativação e expansão com foco gerencial.' },
+    losses: { eyebrow: 'Command Center / Perdas', title: 'Perdas', copy: 'Motivos de perda organizados por impacto e correção.' },
+    targets: { eyebrow: 'Command Center / Metas', title: 'Metas', copy: 'Run rate, forecast e gap de meta para tomada de decisão.' },
+    fca: { eyebrow: 'Command Center / FCA', title: 'FCA', copy: 'Fato, causa e ação com acompanhamento executivo.' },
+    handoff: { eyebrow: 'Command Center / Handoff', title: 'Handoff', copy: 'Contexto, riscos e próximos passos para continuidade da gestão.' },
+    status: { eyebrow: 'Command Center / Sistema', title: 'Sistema', copy: 'Saúde da base e governança para decisões com dados confiáveis.' }
   };
 
   var defaultTargets = {
@@ -460,7 +461,7 @@
   }
 
   function insight(kind, title, body) {
-    return '<article class="glass insight-card">' + tag(kind, 'V4 ON') + '<h3>' + esc(title) + '</h3><p>' + esc(body) + '</p></article>';
+    return '<article class="glass insight-card">' + tag(kind, 'Sistema') + '<h3>' + esc(title) + '</h3><p>' + esc(body) + '</p></article>';
   }
 
   function bar(label, value, max, sub) {
@@ -486,6 +487,18 @@
 
   function daysInSelection(list) {
     return Math.max(1, unique(list.map(function (row) { return row.date; })).length);
+  }
+
+  function stageLabel(stage) {
+    return {
+      all: 'Todas',
+      leadTag: 'Tag LEAD',
+      mql: 'MQL',
+      sql: 'SQL',
+      opportunity: 'Oportunidade',
+      purchase: 'Compra',
+      lost: 'Perdas'
+    }[stage] || stage || 'Todas';
   }
 
   function getTargets() {
@@ -534,14 +547,21 @@
     );
 
     var funnel = [
-      ['Lead ID', m.total, div(m.total, m.total)],
-      ['MQL', m.mql, div(m.mql, m.total)],
-      ['SQL', m.sql, div(m.sql, m.total)],
-      ['Oportunidade', m.opportunity, div(m.opportunity, m.total)],
-      ['Compra', m.purchase, div(m.purchase, m.total)]
+      ['Lead ID', 'all', m.total, div(m.total, m.total)],
+      ['MQL', 'mql', m.mql, div(m.mql, m.total)],
+      ['SQL', 'sql', m.sql, div(m.sql, m.total)],
+      ['Oportunidade', 'opportunity', m.opportunity, div(m.opportunity, m.total)],
+      ['Compra', 'purchase', m.purchase, div(m.purchase, m.total)],
+      ['Perdas', 'lost', m.loss, div(m.loss, m.total)]
     ];
     set('funnelChart', '<div class="funnel-list">' + funnel.map(function (item) {
-      return bar(item[0], item[1], Math.max(1, m.total), fmt(item[1]) + ' | ' + pct(item[2]));
+      var width = Math.max(3, Math.min(100, div(item[2], Math.max(1, m.total)) * 100));
+      var active = filters.stage === item[1] || (filters.stage === 'all' && item[1] === 'all') ? ' active' : '';
+      return '<button class="funnel-row funnel-action' + active + '" type="button" data-stage-filter="' + esc(item[1]) + '">' +
+        '<b>' + esc(item[0]) + '</b>' +
+        '<div class="bar-line"><i style="--w:' + width + '%"></i></div>' +
+        '<span>' + fmt(item[2]) + ' | ' + pct(item[3]) + '</span>' +
+        '</button>';
     }).join('') + '</div>');
 
     var days = groupBy(filtered, function (row) { return row.date; }).sort(function (a, b) { return a.key.localeCompare(b.key); });
@@ -553,7 +573,7 @@
     var metaShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; })).total);
     var googleShare = div(metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).purchase, metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; })).total);
     set('executiveInsights',
-      insight(restriction.current.kind, 'Restrição atual: ' + restriction.current.key, restriction.current.evidence + ' Próxima ação: ' + restriction.current.action) +
+      insight(restriction.current.kind, 'Restrição dominante: ' + restriction.current.key, restriction.current.evidence + ' Encaminhamento: ' + restriction.current.action) +
       insight('danger', 'CRM de perda precisa ser governado', fmt(m.reasonWithoutLostFlag) + ' registros têm motivo de perda sem a flag LEAD PERDIDO.') +
       insight('info', 'Google supera Meta em intenção', 'Google Ads converte ' + pct(googleShare) + ' contra ' + pct(metaShare) + ' em Meta Ads no filtro.')
     );
@@ -582,7 +602,7 @@
       '<div class="decision-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
       '<div class="decision-item"><b>Impacto</b><span>' + esc(current.impact) + '</span></div>' +
       '<div class="decision-item"><b>Ação</b><span>' + esc(current.action) + '</span></div>' +
-      '<div class="decision-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
+      '<div class="decision-item"><b>Responsável e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
       '</div></div>'
     );
 
@@ -597,7 +617,7 @@
     );
 
     set('restrictionMatrix', table(
-      ['Restrição possível', 'Score', 'Evidência', 'Ação V4 ON', 'Dono'],
+      ['Restrição possível', 'Score', 'Evidência', 'Ação operacional', 'Responsável'],
       restriction.candidates.map(function (item) {
         return [esc(item.key), fmt(item.score), esc(item.evidence), esc(item.action), esc(item.owner)];
       })
@@ -638,7 +658,7 @@
     );
 
     set('stageWipTable', table(
-      ['Etapa', 'Entradas', 'Saídas', 'WIP', 'Aging', 'SLA', 'Dono', 'Restrição?'],
+      ['Etapa', 'Entradas', 'Saídas', 'WIP', 'Aging', 'SLA', 'Responsável', 'Restrição?'],
       stages.map(function (stage) {
         var kind = stage.wip === topStage.wip && stage.wip > 0 ? 'Sim' : 'Não';
         return [esc(stage.key), fmt(stage.count), fmt(stage.next), fmt(stage.wip), esc(stage.aging), esc(stage.sla), esc(stage.owner), kind];
@@ -665,7 +685,7 @@
     set('priorityQueueTable', table(
       ['Prioridade', 'Fila', 'Critério', 'Volume', 'Ação de hoje'],
       [
-        ['P0', 'Oportunidade sem compra', 'OPP - compras', fmt(Math.max(0, m.opportunity - m.purchase)), 'Follow-up D0/D1/D3 com dono'],
+        ['P0', 'Oportunidade sem compra', 'OPP - compras', fmt(Math.max(0, m.opportunity - m.purchase)), 'Follow-up D0/D1/D3 com responsável'],
         ['P0', 'Perda sem status', 'Motivo preenchido sem LEAD PERDIDO', fmt(m.reasonWithoutLostFlag), 'Corrigir CRM antes do check-in'],
         ['P1', 'Leads sem origem', 'Origem vazia', fmt(m.noOrigin), 'Obrigar UTM/origem na entrada'],
         ['P1', 'SQL sem MQL', 'Etapa fora de ordem', fmt(m.sqlWithoutMql), 'Auditar marcação da jornada'],
@@ -674,7 +694,7 @@
     ));
 
     set('pcpInsights',
-      insight('info', 'Capacidade é regra do jogo', 'O PCP comercial mostra se o volume que entra cabe no time antes de cobrar conversão individual.') +
+      insight('info', 'Capacidade define prioridade', 'O PCP comercial mostra se o volume recebido cabe na operação antes de cobrar conversão individual.') +
       insight(topStage.wip > 100 ? 'danger' : 'warn', 'WIP muda a prioridade', 'A etapa com mais acúmulo hoje é ' + topStage.key + ', com ' + fmt(topStage.wip) + ' registros.') +
       insight('ok', 'Fila quente primeiro', 'Oportunidade aberta e compra sem progressão viram prioridade antes de novas otimizações locais.')
     );
@@ -828,7 +848,7 @@
       [
         ['Entrada', 'Origem, campanha, canal', 'Sem origem não entra no diagnóstico de mídia.', 'Validar UTM/lead source'],
         ['Triagem', 'Produto, região, urgência', 'Lead sem fit sai da fila comercial padrão.', 'Bot qualifica antes do humano'],
-        ['Transbordo', 'Dono e SLA', 'Todo lead humano precisa de responsável.', 'Alerta se passar do SLA'],
+        ['Transbordo', 'Responsável e SLA', 'Todo lead humano precisa de responsável.', 'Alerta se passar do SLA'],
         ['Follow-up', 'Próxima ação e data', 'Sem próxima ação vira risco.', 'Tarefa D0/D1/D3'],
         ['Fechamento', 'Compra ou motivo de perda', 'Perda sem motivo não ensina o sistema.', 'Campo obrigatório ao perder']
       ]
@@ -860,11 +880,11 @@
     );
 
     set('relationshipRules', table(
-      ['Grupo', 'Gatilho', 'Próxima ação', 'Automação'],
+      ['Grupo', 'Gatilho', 'Encaminhamento', 'Automação'],
       [
         ['Promotor', 'CSAT 4-5 / compra satisfeita', 'Pedir depoimento, indicação e upgrade.', 'Mensagem pós-instalação + link de review'],
         ['Neutro', 'CSAT 3 / sem entusiasmo', 'Entender objeção e reforçar valor.', 'Pesquisa curta + tarefa para CS'],
-        ['Detrator', 'CSAT 1-2 / reclamação', 'Pedido de desculpas, correção e acompanhamento.', 'Alerta para gestor + SLA de recuperação'],
+        ['Detrator', 'CSAT 1-2 / reclamação', 'Correção, acompanhamento e evidência de recuperação.', 'Alerta para liderança + SLA de recuperação'],
         ['Sem resposta', 'Não respondeu pesquisa', 'Follow-up de satisfação.', 'Nova tentativa em 24h/72h'],
         ['Cliente inativo', 'Compra não concluída ou lead perdido', 'Reativação por motivo específico.', 'Régua por motivo de perda']
       ]
@@ -906,7 +926,7 @@
     }).join('') + '</div>');
 
     set('categoryPlan', table(
-      ['Categoria', 'Volume', 'Peso', 'Leitura V4 ON', 'Ação operacional'],
+      ['Categoria', 'Volume', 'Peso', 'Leitura executiva', 'Ação operacional'],
       categories.map(function (category) {
         return [
           esc(category.key),
@@ -1029,13 +1049,13 @@
   function renderFca(m) {
     var items = getFcas();
     set('fcaList', items.length ? items.map(function (item, index) {
-      return '<div class="fca-item"><h4>' + esc(item.title) + '</h4><small>' + esc(item.status) + ' | Dono: ' + esc(item.owner) + ' | Prazo: ' + esc(item.due) + '</small>' +
+      return '<div class="fca-item"><h4>' + esc(item.title) + '</h4><small>' + esc(item.status) + ' | Responsável: ' + esc(item.owner) + ' | Prazo: ' + esc(item.due) + '</small>' +
         '<p><b>Fato:</b> ' + esc(item.fact || '-') + '</p><p><b>Causa:</b> ' + esc(item.cause || '-') + '</p><p><b>Ação:</b> ' + esc(item.action || '-') + '</p>' +
         '<button class="btn" type="button" data-remove-fca="' + index + '">Remover</button></div>';
     }).join('') : '<p class="empty">Nenhum FCA manual cadastrado ainda.</p>');
 
     set('taskTable', table(
-      ['Prioridade', 'Task', 'Por que', 'Dono sugerido'],
+      ['Prioridade', 'Ação', 'Por que', 'Responsável sugerido'],
       [
         ['Crítica', 'Obrigar status perdido quando houver motivo', fmt(m.reasonWithoutLostFlag) + ' motivos sem flag LEAD PERDIDO', 'CRM / Sales Ops'],
         ['Alta', 'Obrigar origem/campanha no lead', fmt(m.noOrigin) + ' registros sem origem marcada', 'Mídia + CRM'],
@@ -1059,7 +1079,7 @@
 
     set('handoffKpis',
       kpi('Contexto consolidado', fmt(m.total), 'Lead IDs no escopo') +
-      kpi('Donos ativos', fmt(sellers.length), 'responsáveis comerciais') +
+      kpi('Responsáveis ativos', fmt(sellers.length), 'operação comercial') +
       kpi('Fontes ativas', fmt(origins.length), 'origens/canais') +
       kpi('Riscos abertos', fmt(riskCount), restriction.current.key)
     );
@@ -1069,7 +1089,7 @@
       '<div class="rule-item"><b>Visão de negócio</b><span>Internet local com funil de venda, cobertura, viabilidade e alta dependência de CRM confiável.</span></div>' +
       '<div class="rule-item"><b>Restrição atual</b><span>' + esc(restriction.current.key) + ': ' + esc(restriction.current.evidence) + '</span></div>' +
       '<div class="rule-item"><b>O que já está funcionando</b><span>' + fmt(m.purchase) + ' compras, ' + pct(m.conversion) + ' de compra/lead e ticket médio de ' + money(m.ticket) + '.</span></div>' +
-      '<div class="rule-item"><b>O que não pode se perder</b><span>Motivos de perda, origem, dono, próxima ação e progressão MQL → SQL → Oportunidade → Compra.</span></div>' +
+      '<div class="rule-item"><b>O que não pode se perder</b><span>Motivos de perda, origem, responsável, próxima ação e progressão MQL → SQL → Oportunidade → Compra.</span></div>' +
       '</div>'
     );
 
@@ -1079,20 +1099,20 @@
         ['CRM', 'GrowthPack / BASE_CRM', 'Consolidado por Lead ID', 'Corrigir status perdido e etapas'],
         ['Mídia', 'Meta Ads + Google Ads', 'Origem lida quando marcada', 'Fechar lacuna de origem/UTM'],
         ['Atendimento', 'WhatsApp / Bot / Comercial', 'Modelo operacional inferido', 'Conectar SLA real quando disponível'],
-        ['Tarefas', 'FCA local + rotina V4 ON', 'Cadastro manual no navegador', 'Definir dono, prazo e evidência'],
+        ['Tarefas', 'FCA local + rotina executiva', 'Cadastro manual no navegador', 'Definir responsável, prazo e evidência'],
         ['Check-ins', 'Reuniões / transcrições / handoff', 'Estrutura pronta', 'Registrar decisões e próximos 7 dias']
       ]
     ));
 
     set('nextSevenDays', table(
-      ['Dia', 'Prioridade', 'Dono', 'Evidência esperada'],
+      ['Dia', 'Prioridade', 'Responsável', 'Evidência esperada'],
       [
         ['D0', 'Corrigir origem obrigatória e status perdido', 'CRM / Sales Ops', 'Queda de registros sem origem e motivo sem flag'],
         ['D1', 'Separar fila de cobertura/viabilidade antes do comercial', 'Operação + CRM', 'Menos perda por infraestrutura'],
         ['D2', 'Auditar Meta x Google por motivo de perda', 'Mídia + Comercial', 'Canal com qualidade medida por compra e motivo'],
         ['D3', 'Implantar régua D0-D3 para falta de prioridade', 'Coordenação comercial', 'Mais retorno e menos perda por interesse'],
         ['D4', 'Revisar WIP e capacidade por vendedora', 'Gestão comercial', 'Fila redistribuída e SLA definido'],
-        ['D5', 'Criar FCA dos 2 maiores gargalos', 'Gestor', 'Fato, causa, ação, dono e prazo cadastrados'],
+        ['D5', 'Criar FCA dos 2 maiores gargalos', 'Liderança', 'Fato, causa, ação, responsável e prazo cadastrados'],
         ['D7', 'Check-in de restrição: o gargalo mudou?', 'GrowthOps', 'Nova restrição calculada pelo cockpit']
       ]
     ));
@@ -1103,7 +1123,7 @@
         ['CRM não confiável', fmt(m.dataIssues), 'Decisão vira opinião se o dado está incompleto.', 'Auditoria semanal + campos obrigatórios'],
         ['Origem vazia', fmt(m.noOrigin), 'CAC, ROAS e qualidade por canal ficam cegos.', 'UTM/origem obrigatória'],
         ['Perda sem status', fmt(m.reasonWithoutLostFlag), 'O dashboard subestima perdas reais.', 'Motivo de perda sincronizado com status'],
-        ['Oportunidade parada', fmt(openOpps), 'Receita potencial envelhece sem dono claro.', 'Fila quente + follow-up D0/D1/D3'],
+        ['Oportunidade parada', fmt(openOpps), 'Receita potencial envelhece sem responsável claro.', 'Fila quente + follow-up D0/D1/D3'],
         ['Restrição sem FCA', restriction.current.key, 'Gargalo volta a se repetir se não vira execução.', 'Cadastrar FCA e tarefa com evidência']
       ]
     ));
@@ -1131,18 +1151,18 @@
     ));
 
     set('governanceTable', table(
-      ['Bloco', 'Risco atual', 'Regra V4 ON'],
+      ['Bloco', 'Risco atual', 'Regra executiva'],
       [
         ['CRM', 'Status de perda inconsistente', 'Motivo preenchido deve gerar perda ou fila recuperável'],
         ['Mídia', 'Origem vazia em grande parte da base', 'UTM/origem obrigatória antes de análise de canal'],
         ['Comercial', 'Etapas fora de ordem', 'Progressão mínima auditável no funil'],
         ['Operação', 'Cobertura e viabilidade geram perda', 'Pré-check antes de distribuir para vendedor'],
-        ['Gestão', 'FCA depende de decisão humana', 'Gestor cadastra o FCA e time executa task']
+        ['Gestão', 'FCA depende de decisão humana', 'Liderança registra o FCA e operação executa a ação']
       ]
     ));
 
     set('architectureTable', table(
-      ['Camada V4 ON', 'Saída no painel', 'Uso prático'],
+      ['Camada operacional', 'Saída no painel', 'Uso prático'],
       [
         ['Dados', 'Base GrowthPack consolidada', 'Leitura única por Lead ID'],
         ['Diagnóstico', 'KPIs, motivos, origem, funil e auditorias', 'Separar problema de lead, mídia, CRM e vendedor'],
@@ -1169,7 +1189,7 @@
     var topTicketSeller = sellersByTicket[0] || bestCloser;
     var mostLossSeller = sellersByLoss[0] || bestCloser;
     var stages = stageModel(m);
-    var topStage = stages.slice().sort(function (a, b) { return b.wip - a.wip; })[0] || { key: 'Sem gargalo', wip: 0, aging: 'ok', owner: 'Sem dono' };
+    var topStage = stages.slice().sort(function (a, b) { return b.wip - a.wip; })[0] || { key: 'Sem gargalo', wip: 0, aging: 'ok', owner: 'Sem responsável' };
     var google = metrics(filtered.filter(function (row) { return row.origin === 'Google Ads'; }));
     var meta = metrics(filtered.filter(function (row) { return row.origin === 'Meta Ads'; }));
     var reasons = groupBy(filtered.filter(function (row) { return row.lossReason; }), function (row) { return row.lossReason; }).sort(function (a, b) { return b.m.total - a.m.total; });
@@ -1203,8 +1223,36 @@
     var riskBlocks = [m.noOrigin, m.reasonWithoutLostFlag, openOpps, m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp].filter(function (value) { return value > 0; }).length;
 
     var contexts = {
+      council: {
+        kicker: 'Conselho Executivo',
+        title: 'Restrição, capital e execução no recorte atual',
+        copy: 'Leitura integrada de restrição, capital, fluxo, CRM e execução.',
+        asideLabel: 'Decisão recomendada',
+        statCards:
+          shellMetric('Restricao', esc(current.key), 'score ' + fmt(current.score), current.kind === 'danger' ? 'danger' : 'warn') +
+          shellMetric('Confianca', pct(m.health), fmt(issueCount) + ' alertas de dados', m.health >= .75 ? 'up' : 'danger') +
+          shellMetric('Compra / lead', pct(m.conversion), fmt(m.purchase) + ' compras', m.conversion >= .25 ? 'up' : 'warn') +
+          shellMetric('Receita lida', money(m.value), 'ticket ' + money(m.ticket), 'up'),
+        statusHtml:
+          '<span class="pill"><b>Decisão:</b> ' + esc(current.key) + '</span>' +
+          '<span class="pill"><b>Responsável:</b> ' + esc(current.owner) + '</span>' +
+          '<span class="pill"><b>Prazo:</b> ' + esc(current.due) + '</span>' +
+          '<span class="pill"><b>CRM:</b> ' + pct(m.health) + '</span>',
+        signalHtml:
+          signalCard('Tese central', 'Restrição primeiro', 'escala vem depois de confiabilidade') +
+          signalCard('Fila crítica', topStage.key, fmt(topStage.wip) + ' registros acumulados') +
+          signalCard('Capital', roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'ROAS com metas editáveis') +
+          signalCard('Encaminhamento', current.owner, current.action),
+        asideHtml:
+          '<div class="restriction-hero">' +
+          '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + fmt(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
+          '<div class="compact-grid">' +
+          '<div class="rule-item"><b>Veredito</b><span>Priorizar o gargalo que mais aumenta receita e confiabilidade no próximo ciclo.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>' + esc(current.action) + '</span></div>' +
+          '</div></div>'
+      },
       overview: {
-        kicker: 'Cockpit de Receita e Restrição',
+        kicker: 'Painel de Receita e Restrição',
         title: 'Onde a receita está travando agora',
         copy: 'Leitura executiva da operação com receita, CRM e restrição em foco.',
         asideLabel: 'Restrição dominante',
@@ -1223,13 +1271,13 @@
           signalCard('Janela ativa', dateRange, fmt(days) + ' dias úteis no filtro') +
           signalCard('Pipeline aberto', fmt(openOpps), 'oportunidades sem compra') +
           signalCard('Perdas mapeadas', fmt(m.loss), pct(m.lossRate) + ' dos leads filtrados') +
-          signalCard('Modo operacional', 'V4 ON', 'dados → diagnóstico → decisão → tarefa'),
+          signalCard('Modo operacional', 'Sistema de gestão', 'dados → diagnóstico → decisão → ação'),
         asideHtml:
           '<div class="restriction-hero">' +
           '<div class="restriction-score"><div><span>Score da restrição</span><strong>' + Math.round(current.score) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
           '<div class="compact-grid">' +
           '<div class="rule-item"><b>Evidência</b><span>' + esc(current.evidence) + '</span></div>' +
-          '<div class="rule-item"><b>Dono e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
+          '<div class="rule-item"><b>Responsável e prazo</b><span>' + esc(current.owner) + ' | ' + esc(current.due) + '</span></div>' +
           '</div></div>'
       },
       restriction: {
@@ -1245,7 +1293,7 @@
         statusHtml:
           '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>' +
           '<span class="pill"><b>WIP:</b> ' + fmt(topStage.wip) + ' em ' + esc(topStage.key) + '</span>' +
-          '<span class="pill"><b>Dono:</b> ' + esc(current.owner) + '</span>' +
+          '<span class="pill"><b>Responsável:</b> ' + esc(current.owner) + '</span>' +
           '<span class="pill"><b>Prazo:</b> ' + esc(current.due) + '</span>',
         signalHtml:
           signalCard('Restrição atual', current.key, 'maior impacto no filtro') +
@@ -1257,8 +1305,8 @@
           '<div class="restriction-score"><div><span>Impacto estimado</span><strong>' + fmt(m.dataIssues) + '</strong></div>' + tag(current.kind, current.key) + '</div>' +
           '<div class="compact-grid">' +
           '<div class="rule-item"><b>Impacto</b><span>' + esc(current.impact) + '</span></div>' +
-          '<div class="rule-item"><b>Ação V4 ON</b><span>' + esc(current.action) + '</span></div>' +
-          '<div class="rule-item"><b>Dono</b><span>' + esc(current.owner) + '</span></div>' +
+          '<div class="rule-item"><b>Ação operacional</b><span>' + esc(current.action) + '</span></div>' +
+          '<div class="rule-item"><b>Responsável</b><span>' + esc(current.owner) + '</span></div>' +
           '<div class="rule-item"><b>Prazo</b><span>' + esc(current.due) + '</span></div>' +
           '</div></div>'
       },
@@ -1278,7 +1326,7 @@
           '<span class="pill"><b>Capacidade/dia:</b> ' + fmt(targets.sellerDailyCapacity) + '</span>' +
           '<span class="pill"><b>Janela:</b> ' + dateRange + '</span>',
         signalHtml:
-          signalCard('Etapa com aging', topStage.key, topStage.aging + ' | dono ' + topStage.owner) +
+          signalCard('Etapa com aging', topStage.key, topStage.aging + ' | responsável ' + topStage.owner) +
           signalCard('Oportunidades paradas', fmt(openOpps), 'necessitam follow-up') +
           signalCard('Maior fila', bestCloser.key, fmt(Math.max(0, bestCloser.m.opportunity - bestCloser.m.purchase)) + ' opp sem compra') +
           signalCard('Fila quente', 'P0', 'oportunidade aberta e perda sem status vêm antes'),
@@ -1427,7 +1475,7 @@
           '<div class="restriction-score"><div><span>Maior vazamento</span><strong>' + fmt(topReasonItem.m.total) + '</strong></div>' + tag('danger', topReasonItem.key) + '</div>' +
           '<div class="compact-grid">' +
           '<div class="rule-item"><b>Leitura</b><span>' + esc(topReasonItem.key) + ' é hoje a perda mais frequente na base filtrada.</span></div>' +
-          '<div class="rule-item"><b>Ação</b><span>Transformar categoria ' + esc(topCategoryItem.key) + ' em task/FCA com dono e prazo.</span></div>' +
+          '<div class="rule-item"><b>Ação</b><span>Transformar categoria ' + esc(topCategoryItem.key) + ' em task/FCA com responsável e prazo.</span></div>' +
           '</div></div>'
       },
       targets: {
@@ -1449,7 +1497,7 @@
           signalCard('Gap de leads', fmt(Math.max(0, number(targets.monthlyLeads) - projectedLeads)), 'faltando no ritmo atual') +
           signalCard('Gap de compras', fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)), 'faltando para bater a meta') +
           signalCard('Gap de receita', money(Math.max(0, number(targets.monthlyRevenue) - projectedRevenue)), 'abaixo da meta') +
-          signalCard('Condição de fechamento', projectedPurchases >= number(targets.monthlyPurchases) ? 'Ritmo suficiente' : 'Restrição ainda trava', projectedPurchases >= number(targets.monthlyPurchases) ? 'proteger margem e CRM' : 'precisa task com dono'),
+          signalCard('Condição de fechamento', projectedPurchases >= number(targets.monthlyPurchases) ? 'Ritmo suficiente' : 'Restrição ainda trava', projectedPurchases >= number(targets.monthlyPurchases) ? 'proteger margem e CRM' : 'precisa ação com responsável'),
         asideHtml:
           '<div class="restriction-hero">' +
           '<div class="restriction-score"><div><span>Gap de compras</span><strong>' + fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)) + '</strong></div>' + tag(projectedPurchases >= number(targets.monthlyPurchases) ? 'ok' : 'warn', 'Meta mensal') + '</div>' +
@@ -1459,9 +1507,9 @@
           '</div></div>'
       },
       fca: {
-        kicker: 'Execução com dono',
+        kicker: 'Execução com responsável',
         title: 'Fato, causa e ação precisam sair do discurso e virar acompanhamento',
-        copy: 'O que precisa virar execução, com dono, prazo e evidência.',
+        copy: 'O que precisa virar execução, com responsável, prazo e evidência.',
         asideLabel: 'FCA em andamento',
         statCards:
           shellMetric('FCAs abertos', fmt(openFcas), 'pendências em execução', openFcas > 0 ? 'warn' : 'up') +
@@ -1474,10 +1522,10 @@
           '<span class="pill"><b>Concluídos:</b> ' + fmt(doneFcas) + '</span>' +
           '<span class="pill"><b>Restrição:</b> ' + esc(current.key) + '</span>',
         signalHtml:
-          signalCard('FCA aberta', fcas[0] ? fcas[0].title : 'Nenhum cadastrado', fcas[0] ? fcas[0].status + ' | ' + fcas[0].owner : 'gestor ainda não registrou') +
+          signalCard('FCA aberta', fcas[0] ? fcas[0].title : 'Nenhuma registrada', fcas[0] ? fcas[0].status + ' | ' + fcas[0].owner : 'sem FCA registrada') +
           signalCard('Maior trava', current.key, 'precisa virar execução') +
           signalCard('Prazo curto', fcas[0] && fcas[0].due ? fcas[0].due : 'Sem prazo', 'campo sensível para cobrança') +
-          signalCard('Disciplina', 'V4 ON', 'toda decisão crítica vira dono, prazo e evidência'),
+          signalCard('Disciplina', 'Governança', 'toda decisão crítica vira responsável, prazo e evidência'),
         asideHtml:
           '<div class="restriction-hero">' +
           '<div class="restriction-score"><div><span>FCA aberta</span><strong>' + fmt(openFcas) + '</strong></div>' + tag(openFcas > 0 ? 'warn' : 'info', 'Execução') + '</div>' +
@@ -1493,22 +1541,22 @@
         asideLabel: 'Risco de continuidade',
         statCards:
           shellMetric('Riscos abertos', fmt(riskBlocks), 'blocos exigindo alinhamento', 'warn') +
-          shellMetric('Donos ativos', fmt(sellers.length), 'responsáveis no filtro', 'up') +
+          shellMetric('Responsáveis ativos', fmt(sellers.length), 'responsáveis no filtro', 'up') +
           shellMetric('Fontes ativas', fmt(groupBy(filtered, function (row) { return row.origin; }).length), 'origens/canais detectados', 'up') +
           shellMetric('Pipeline em aberto', fmt(openOpps), 'oportunidades sem compra', openOpps > 0 ? 'warn' : 'up'),
         statusHtml:
           '<span class="pill"><b>Riscos:</b> ' + fmt(riskBlocks) + '</span>' +
-          '<span class="pill"><b>Donos:</b> ' + fmt(sellers.length) + '</span>' +
+          '<span class="pill"><b>Responsáveis:</b> ' + fmt(sellers.length) + '</span>' +
           '<span class="pill"><b>Fontes:</b> ' + fmt(groupBy(filtered, function (row) { return row.origin; }).length) + '</span>' +
           '<span class="pill"><b>Próximos 7 dias:</b> 7 ações</span>',
         signalHtml:
           signalCard('Stack', 'CRM + mídia + atendimento', 'camadas já visíveis no cockpit') +
           signalCard('Risco principal', current.key, 'trava mais sensível para continuidade') +
           signalCard('Sem origem', fmt(m.noOrigin), 'risco de atribuição e handoff cego') +
-          signalCard('Oportunidade em aberto', fmt(openOpps), 'pedem dono e narrativa clara'),
+          signalCard('Oportunidade em aberto', fmt(openOpps), 'pedem responsável e narrativa clara'),
         asideHtml:
           '<div class="restriction-hero">' +
-          '<div class="restriction-score"><div><span>Continuidade</span><strong>' + fmt(sellers.length) + '</strong></div>' + tag('info', 'Donos ativos') + '</div>' +
+          '<div class="restriction-score"><div><span>Continuidade</span><strong>' + fmt(sellers.length) + '</strong></div>' + tag('info', 'Responsáveis ativos') + '</div>' +
           '<div class="compact-grid">' +
           '<div class="rule-item"><b>Leitura</b><span>O handoff precisa sair com stack, riscos e próximos sete dias amarrados.</span></div>' +
           '<div class="rule-item"><b>Ação</b><span>Usar a restrição atual e os riscos abertos como pauta mínima de transição.</span></div>' +
@@ -1533,7 +1581,7 @@
           signalCard('Base ativa', 'GrowthPack', fmt(rows.length) + ' Lead IDs') +
           signalCard('Ponto crítico', 'Perda sem status', fmt(m.reasonWithoutLostFlag) + ' registros') +
           signalCard('Origem vazia', fmt(m.noOrigin), 'rompe a leitura de canal') +
-          signalCard('Arquitetura', 'V4 ON', 'dados → diagnóstico → decisão → tarefa'),
+          signalCard('Arquitetura', 'Sistema', 'dados → diagnóstico → decisão → ação'),
         asideHtml:
           '<div class="restriction-hero">' +
           '<div class="restriction-score"><div><span>Health CRM</span><strong>' + pct(m.health) + '</strong></div>' + tag(m.health >= .75 ? 'ok' : m.health >= .55 ? 'warn' : 'danger', 'Confiabilidade') + '</div>' +
@@ -1569,6 +1617,214 @@
       '<div><b>' + money(m.ticket) + '</b><span>ticket</span></div>' +
       '<div><b>' + Math.round(current.score) + '</b><span>score restrição</span></div>'
     );
+  }
+
+  function councilScoreRow(label, score, detail, action) {
+    var kind = score >= 75 ? 'ok' : score >= 55 ? 'warn' : 'danger';
+    return '<div class="council-score-row">' +
+      '<div><b>' + esc(label) + '</b><span>' + esc(detail) + '</span></div>' +
+      '<strong class="' + kind + '">' + fmt(score) + '</strong>' +
+      '<div class="score-track"><i style="--w:' + Math.max(4, Math.min(100, score)) + '%"></i></div>' +
+      '<small>' + esc(action) + '</small>' +
+      '</div>';
+  }
+
+  function activeFilterItems() {
+    var items = [];
+    if (filters.start || filters.end) items.push(['Periodo', (filters.start || 'inicio') + ' ate ' + (filters.end || 'hoje')]);
+    if (filters.seller !== 'all') items.push(['Vendedora', filters.seller]);
+    if (filters.origin !== 'all') items.push(['Origem', filters.origin]);
+    if (filters.stage !== 'all') items.push(['Etapa', stageLabel(filters.stage)]);
+    if (filters.reason !== 'all') items.push(['Motivo', filters.reason]);
+    if (filters.category !== 'all') items.push(['Categoria', filters.category]);
+    if (filters.search === 'infraestrutura') {
+      items.push(['Categoria', 'Infraestrutura']);
+    } else if (filters.search === 'falta de interesse') {
+      items.push(['Motivo', 'Falta de interesse']);
+    } else if (filters.search) {
+      items.push(['Busca', filters.search]);
+    }
+    return items;
+  }
+
+  function renderFilterIntelligence(m, restriction) {
+    var current = restriction.current;
+    var chips = [
+      ['no-origin', 'Sem origem', fmt(m.noOrigin) + ' registros cegos'],
+      ['google', 'Google Ads', 'qualidade por intencao'],
+      ['meta', 'Meta Ads', 'volume e promessa'],
+      ['purchase', 'Compras', 'base convertida'],
+      ['lost', 'Perdas', fmt(m.loss) + ' motivos'],
+      ['infra', 'Infraestrutura', 'cobertura e viabilidade'],
+      ['commercial-priority', 'Prioridade', 'interesse e follow-up'],
+      ['pipeline', 'Pipeline aberto', 'opp sem compra'],
+      ['clear', 'Limpar', 'voltar para base']
+    ];
+    set('quickFilterChips', chips.map(function (chip) {
+      return '<button class="quick-filter" type="button" data-quick-filter="' + chip[0] + '">' +
+        '<b>' + esc(chip[1]) + '</b><span>' + esc(chip[2]) + '</span></button>';
+    }).join(''));
+
+    var items = activeFilterItems();
+    set('activeFilterSummary',
+      '<div class="filter-summary-head"><b>Recorte atual</b><span>' + fmt(filtered.length) + ' de ' + fmt(rows.length) + ' Lead IDs</span></div>' +
+      '<div class="filter-summary-list">' +
+      (items.length ? items.map(function (item) {
+        return '<span><b>' + esc(item[0]) + '</b>' + esc(item[1]) + '</span>';
+      }).join('') : '<span><b>Base</b>Sem filtro alem da janela padrao</span>') +
+      '</div>' +
+      '<p>Leitura dominante: ' + esc(current.key) + '. Acao: ' + esc(current.action) + '</p>'
+    );
+  }
+
+  function applyQuickFilter(type) {
+    if (type === 'clear') {
+      resetFilters();
+      toast('Filtros inteligentes limpos');
+      return;
+    }
+    filters.search = '';
+    filters.stage = 'all';
+    filters.origin = 'all';
+    filters.reason = 'all';
+    filters.category = 'all';
+    if (type === 'no-origin') filters.origin = 'Sem origem marcada';
+    if (type === 'google') filters.origin = 'Google Ads';
+    if (type === 'meta') filters.origin = 'Meta Ads';
+    if (type === 'purchase') filters.stage = 'purchase';
+    if (type === 'lost') filters.stage = 'lost';
+    if (type === 'infra') {
+      filters.stage = 'lost';
+      filters.search = 'infraestrutura';
+    }
+    if (type === 'commercial-priority') {
+      filters.stage = 'lost';
+      filters.search = 'falta de interesse';
+    }
+    if (type === 'pipeline') filters.stage = 'opportunity';
+    fillFilters();
+    renderAll();
+    toast('Filtro inteligente aplicado: ' + fmt(filtered.length) + ' Lead IDs');
+  }
+
+  function applyStageFilter(stage) {
+    filters.stage = stage || 'all';
+    fillFilters();
+    renderAll();
+    toast('Etapa aplicada: ' + stageLabel(filters.stage) + ' | ' + fmt(filtered.length) + ' Lead IDs');
+  }
+
+  function renderCouncil(m, restriction) {
+    var current = restriction.current;
+    var targets = getTargets();
+    var days = daysInSelection(filtered);
+    var projectedPurchases = div(m.purchase, days) * 30;
+    var projectedRevenue = div(m.value, days) * 30;
+    var investment = number(targets.metaInvestment) + number(targets.googleInvestment);
+    var roas = div(m.value, investment);
+    var stageBreaks = m.sqlWithoutMql + m.oppWithoutSql + m.purchaseWithoutOpp;
+    var infrastructure = categoryCount(filtered, 'infraestrutura');
+    var commercialPriority = reasonCount(filtered, 'falta de interesse') + reasonCount(filtered, 'prioridade') + reasonCount(filtered, 'atendimento');
+    var openOpps = Math.max(0, m.opportunity - m.purchase);
+    var topStage = stageModel(m).sort(function (a, b) { return b.wip - a.wip; })[0] || { key: 'Sem gargalo', wip: 0, owner: 'Sem responsável' };
+    var crmScore = Math.round(m.health * 100);
+    var mediaScore = Math.round(Math.max(0, 100 - div(m.noOrigin, Math.max(1, m.total)) * 100));
+    var commercialScore = Math.round(Math.max(0, Math.min(100, m.conversion * 260 - div(stageBreaks, Math.max(1, m.total)) * 80 + 45)));
+    var pcpScore = Math.round(Math.max(0, 100 - div(openOpps + topStage.wip, Math.max(1, m.total)) * 110));
+    var infraScore = Math.round(Math.max(0, 100 - div(infrastructure, Math.max(1, m.total)) * 160));
+    var financeScore = Math.round(Math.max(0, Math.min(100, roas * 22 + div(projectedPurchases, Math.max(1, targets.monthlyPurchases)) * 45)));
+    var confidence = Math.round(Math.max(35, Math.min(92, (crmScore * .55) + (m.total >= 250 ? 22 : 12) + (filters.origin !== 'all' ? 4 : 0) + (filters.seller !== 'all' ? 4 : 0))));
+    var verdictKind = crmScore < 65 || current.kind === 'danger' ? 'danger' : projectedPurchases < number(targets.monthlyPurchases) ? 'warn' : 'ok';
+    var verdict = crmScore < 65
+      ? 'Não escalar volume antes de corrigir a verdade operacional do CRM.'
+      : current.key.indexOf('Qualidade') >= 0
+        ? 'Realocar atenção para qualidade de canal antes de aumentar investimento.'
+        : current.key.indexOf('PCP') >= 0
+          ? 'Destravar fila e aging antes de puxar mais entrada no funil.'
+          : 'Transformar a restrição atual em ação com responsável, prazo e evidência.';
+    var nextAction = crmScore < 65
+      ? 'Auditar origem, status de perda, progressão de etapa e valor em 48h.'
+      : current.action;
+
+    set('councilKpis',
+      kpi('Restrição dominante', esc(current.key), 'score ' + fmt(current.score) + ' | ' + esc(current.owner)) +
+      kpi('Confiança da leitura', fmt(confidence) + '/100', 'base ' + fmt(m.total) + ' | health ' + pct(m.health)) +
+      kpi('Receita projetada', money(projectedRevenue), fmt(projectedPurchases) + ' compras em 30 dias | meta ' + fmt(targets.monthlyPurchases)) +
+      kpi('Sinal de capital', roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'CAC lido ' + money(div(investment, m.purchase)))
+    );
+
+    set('councilVerdict',
+      '<div class="council-verdict ' + verdictKind + '">' +
+      '<div><span>Decisão recomendada</span><strong>' + esc(verdict) + '</strong></div>' +
+      '<p>O objetivo do painel é indicar qual restrição, se removida, aumenta compras, receita e confiabilidade no próximo ciclo.</p>' +
+      '<div class="compact-grid">' +
+      '<div class="rule-item"><b>Por que agora</b><span>' + esc(current.evidence) + '</span></div>' +
+      '<div class="rule-item"><b>Encaminhamento</b><span>' + esc(nextAction) + '</span></div>' +
+      '<div class="rule-item"><b>Responsável sugerido</b><span>' + esc(current.owner) + ' | prazo ' + esc(current.due) + '</span></div>' +
+      '<div class="rule-item"><b>Evitar</b><span>Otimizar canal, script ou automação sem corrigir o dado que define prioridade.</span></div>' +
+      '</div></div>'
+    );
+
+    set('councilScorecard',
+      '<div class="council-score-list">' +
+      councilScoreRow('CRM como fonte da verdade', crmScore, fmt(m.dataIssues) + ' inconsistências auditáveis', 'origem, perda, etapa e valor obrigatórios') +
+      councilScoreRow('Mídia e qualidade de canal', mediaScore, fmt(m.noOrigin) + ' leads sem origem', 'separar volume de qualidade comercial') +
+      councilScoreRow('Comercial e conversão', commercialScore, pct(m.conversion) + ' compra / lead', 'fila D0-D3 e script por motivo') +
+      councilScoreRow('PCP e velocidade de fluxo', pcpScore, fmt(openOpps) + ' opp abertas; maior WIP em ' + topStage.key, 'limitar WIP e priorizar fila quente') +
+      councilScoreRow('Infraestrutura e cobertura', infraScore, fmt(infrastructure) + ' perdas inferidas', 'pre-check antes de distribuir ao vendedor') +
+      councilScoreRow('Capital e unit economics', financeScore, 'ROAS ' + roas.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'x', 'validar CAC, ticket e margem antes de escala') +
+      '</div>'
+    );
+
+    set('councilTocTable', table(
+      ['Passo TOC', 'Leitura no filtro', 'Decisão prática'],
+      [
+        ['1. Identificar', esc(current.key), esc(current.evidence)],
+        ['2. Explorar', esc(current.owner), esc(current.action)],
+        ['3. Subordinar', 'Fila, mídia e atendimento seguem a restrição', 'Não puxar volume que aumenta WIP ou dado ruim'],
+        ['4. Elevar', esc(current.due), 'Criar FCA/ação com evidência e checkpoint'],
+        ['5. Repetir', 'Recalcular após correção', 'Se a restrição mudou, atualizar plano e responsável']
+      ]
+    ));
+
+    set('councilAssumptions', table(
+      ['Hipótese crítica', 'Sinal de alerta', 'Como validar'],
+      [
+        ['Compra registrada representa venda real', fmt(m.purchaseZeroValue) + ' compras sem valor', 'cruzar compra, valor e status financeiro'],
+        ['Origem ausente não enviesa CAC', fmt(m.noOrigin) + ' sem origem', 'bloquear lead novo sem UTM/origem mínima'],
+        ['Perda por infraestrutura é evitável antes do comercial', fmt(infrastructure) + ' perdas de cobertura', 'pré-check de viabilidade por bairro/condomínio'],
+        ['Comercial tem capacidade para o volume atual', fmt(openOpps) + ' oportunidades abertas', 'capacidade diária, aging e fila P0'],
+        ['Motivo de perda explica a realidade', fmt(m.reasonWithoutLostFlag) + ' motivos sem status perdido', 'padrão obrigatório de perda e auditoria semanal']
+      ]
+    ));
+
+    set('councilPlan', table(
+      ['Janela', 'Entrega', 'Responsável', 'Métrica de sucesso'],
+      [
+        ['7 dias', 'Corrigir verdade operacional: origem, perda, etapa e valor', 'CRM / Sales Ops', 'Health CRM acima de 75% e queda de inconsistências'],
+        ['14 dias', 'Rodar PCP comercial: fila P0, SLA D0-D3 e cobertura antes do vendedor', 'Gestão comercial', 'queda de WIP e aumento de SQL -> OPP'],
+        ['30 dias', 'Escalar apenas canal/oferta com CAC, cobertura e conversão validados', 'Growth + Mídia + Comercial', 'ROAS, CAC, compras e ticket dentro da meta'],
+        ['Cadência', 'Check-in semanal com restrição, FCA e próximo bloqueio', 'Liderança executiva', 'toda decisão crítica com responsável, prazo e evidência']
+      ]
+    ));
+
+    set('councilGuardrails', table(
+      ['Regra', 'Limite', 'Ação se sair do limite'],
+      [
+        ['CRM confiável', 'Health menor que 75%', 'congelar leitura de escala e auditar base'],
+        ['Origem obrigatória', 'sem origem acima de 10%', 'corrigir captura/UTM antes de CAC'],
+        ['WIP comercial', 'opp abertas acima de 20% dos leads', 'fila P0 e redistribuicao de capacidade'],
+        ['Perda sem status', 'qualquer motivo sem LEAD PERDIDO', 'corrigir automação e campo obrigatório'],
+        ['Escala de mídia', 'ROAS abaixo da meta ou origem cega', 'não subir verba sem qualidade comercial']
+      ]
+    ));
+
+    set('councilDecisionMap', table(
+      ['Restrição', 'Score', 'Evidência', 'Responsável', 'Prazo', 'Ação'],
+      restriction.candidates.map(function (item) {
+        return [esc(item.key), fmt(item.score), esc(item.evidence), esc(item.owner), esc(item.due), esc(item.action)];
+      })
+    ));
   }
 
   function renderTargets(m, keepInputs) {
@@ -1617,7 +1873,7 @@
       '<div class="rule-item"><b>Gap de leads</b><span>' + fmt(Math.max(0, number(targets.monthlyLeads) - projectedLeads)) + ' leads faltando no ritmo atual.</span></div>' +
       '<div class="rule-item"><b>Gap de compras</b><span>' + fmt(Math.max(0, number(targets.monthlyPurchases) - projectedPurchases)) + ' compras faltando para fechar o mês.</span></div>' +
       '<div class="rule-item"><b>Gap de receita</b><span>' + money(Math.max(0, number(targets.monthlyRevenue) - projectedRevenue)) + ' abaixo da meta projetada.</span></div>' +
-      '<div class="rule-item"><b>Leitura V4 ON</b><span>' + (projectedPurchases >= number(targets.monthlyPurchases) ? 'O ritmo atual bate compra; foco é proteger margem e CRM.' : 'A meta não fecha sozinha; a restrição atual precisa virar task com dono.') + '</span></div>' +
+      '<div class="rule-item"><b>Leitura executiva</b><span>' + (projectedPurchases >= number(targets.monthlyPurchases) ? 'O ritmo atual bate compra; foco é proteger margem e CRM.' : 'A meta não fecha sozinha; a restrição atual precisa virar ação com responsável.') + '</span></div>' +
       '</div>'
     );
 
@@ -1663,7 +1919,7 @@
     ));
   }
 
-  function bind() {
+  function bindLegacyUnused() {
     $$('.tab').forEach(function (button) {
       button.addEventListener('click', function () {
         activeTab = button.getAttribute('data-tab');
@@ -1672,6 +1928,10 @@
         $$('.panel').forEach(function (panel) { panel.classList.remove('active'); });
         var panel = $(activeTab);
         if (panel) panel.classList.add('active');
+        if (window.innerWidth <= 1220) {
+          var workspace = document.querySelector('.workspace');
+          if (workspace) workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         updateWorkspaceHead();
         renderAll();
       });
@@ -1738,7 +1998,7 @@
     });
   }
 
-  function boot() {
+  function bootLegacyUnused() {
     try {
       loadRows();
       fillFilters();
@@ -1748,7 +2008,7 @@
       startClock();
       renderAll();
       window.addEventListener('load', initIcons, { once: true });
-      toast('ST1 BI V4 ON ativo: ' + fmt(rows.length) + ' Lead IDs');
+      toast('ST1 Command Center ativo: ' + fmt(rows.length) + ' Lead IDs');
     } catch (error) {
       showError(error);
     }
@@ -1760,6 +2020,8 @@
     var m = metrics(filtered);
     var restriction = restrictionEngine(filtered, m);
     renderShell(m, restriction);
+    renderFilterIntelligence(m, restriction);
+    renderCouncil(m, restriction);
     renderOverview(m, restriction);
     renderRestriction(m, restriction);
     renderPcp(m);
@@ -1816,6 +2078,10 @@
         $$('.panel').forEach(function (panel) { panel.classList.remove('active'); });
         var panel = $(activeTab);
         if (panel) panel.classList.add('active');
+        if (window.innerWidth <= 1220) {
+          var workspace = document.querySelector('.workspace');
+          if (workspace) workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         updateWorkspaceHead();
         renderAll();
       });
@@ -1844,8 +2110,14 @@
       targets[target] = Number(event.target.value);
       saveTargets(targets);
       var m = metrics(filtered);
+      var restriction = restrictionEngine(filtered, m);
+      renderShell(m, restriction);
+      renderFilterIntelligence(m, restriction);
+      renderCouncil(m, restriction);
       renderTargets(m, true);
       renderPcp(m);
+      renderHandoff(m, restriction);
+      renderStatus(m);
     });
 
     if ($('addFca')) {
@@ -1872,6 +2144,16 @@
     }
 
     document.addEventListener('click', function (event) {
+      var stageFilter = event.target && event.target.closest ? event.target.closest('[data-stage-filter]') : null;
+      if (stageFilter) {
+        applyStageFilter(stageFilter.getAttribute('data-stage-filter'));
+        return;
+      }
+      var quickFilter = event.target && event.target.closest ? event.target.closest('[data-quick-filter]') : null;
+      if (quickFilter) {
+        applyQuickFilter(quickFilter.getAttribute('data-quick-filter'));
+        return;
+      }
       var index = event.target && event.target.getAttribute('data-remove-fca');
       if (index == null) return;
       var items = getFcas();
@@ -1904,7 +2186,7 @@
       startClock();
       renderAll();
       window.addEventListener('load', initIcons, { once: true });
-      toast('ST1 BI V4 ON ativo: ' + fmt(rows.length) + ' Lead IDs');
+      toast('ST1 Command Center ativo: ' + fmt(rows.length) + ' Lead IDs');
     } catch (error) {
       showError(error);
     }
