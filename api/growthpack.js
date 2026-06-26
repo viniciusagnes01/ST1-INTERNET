@@ -31,17 +31,23 @@ function csvToRows(text) {
     });
 }
 
+function key(v) {
+  return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 function pick(row, names) {
+  const map = {};
+  Object.entries(row || {}).forEach(([k, v]) => { map[key(k)] = v; });
   for (const name of names) {
-    if (row[name] !== undefined && row[name] !== null && String(row[name]).trim() !== '') return row[name];
-  }
-  const normalized = Object.entries(row).reduce((acc, [key, value]) => {
-    acc[String(key).trim().toLowerCase()] = value;
-    return acc;
-  }, {});
-  for (const name of names) {
-    const value = normalized[String(name).trim().toLowerCase()];
+    const value = map[key(name)];
     if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+  }
+  const wanted = names.map(key).filter(Boolean);
+  for (const [rawKey, value] of Object.entries(row || {})) {
+    const k = key(rawKey);
+    if (wanted.some((name) => k.includes(name))) {
+      if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+    }
   }
   return '';
 }
@@ -61,26 +67,38 @@ function money(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function isoDate(year, month, day) {
+  const y = Number(year) < 100 ? 2000 + Number(year) : Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return '';
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return '';
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 function normDate(v) {
-  const s = String(v ?? '').trim();
+  const s = String(v ?? '').trim().replace(/^'/, '');
+  if (!s) return '';
   if (/^\d+(\.\d+)?$/.test(s)) {
-    const parsed = new Date(Date.UTC(1899, 11, 30) + Math.round(Number(s)) * 86400000);
-    const y = parsed.getUTCFullYear();
-    const mo = parsed.getUTCMonth() + 1;
-    const d = parsed.getUTCDate();
-    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const parsed = new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(s)) * 86400000);
+    return isoDate(parsed.getUTCFullYear(), parsed.getUTCMonth() + 1, parsed.getUTCDate());
   }
-  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
-  m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[\sT,].*)?$/);
+  if (m) return isoDate(m[3], m[2], m[1]);
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[\sT,].*)?$/);
+  if (m) return isoDate(m[1], m[2], m[3]);
+  m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})(?:[\sT,].*)?$/);
+  if (m) return isoDate(m[3], m[2], m[1]);
+  m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) return isoDate(m[3], m[2], m[1]);
+  const parsed = new Date(s);
+  if (!Number.isNaN(parsed.getTime())) return isoDate(parsed.getUTCFullYear(), parsed.getUTCMonth() + 1, parsed.getUTCDate());
   return '';
 }
 
 function origin(row) {
-  const explicit = String(pick(row, ['Origem', 'ORIGEM', 'origin', 'Canal', 'CANAL']) || '').trim();
+  const explicit = String(pick(row, ['Origem', 'ORIGEM', 'origin', 'Canal', 'Fonte']) || '').trim();
   if (explicit) return explicit;
   const meta = bool(pick(row, ['META ADS', 'Meta Ads', 'metaAds']));
   const google = bool(pick(row, ['GOOGLE ADS', 'Google Ads', 'googleAds']));
@@ -92,19 +110,19 @@ function origin(row) {
 
 function normalize(row) {
   return {
-    date: normDate(pick(row, ['Data', 'DATA', 'date', 'dateRaw'])),
-    leadId: String(pick(row, ['Lead ID', 'LEAD ID', 'leadId', 'ID', 'Id']) || '').replace(/\.0$/, '').trim(),
+    date: normDate(pick(row, ['Data', 'DATA', 'date', 'dateRaw', 'Criado em', 'Data de criacao', 'Data de criação', 'Data de entrada', 'Data Lead', 'Data do Lead', 'created_at', 'createdAt'])),
+    leadId: String(pick(row, ['Lead ID', 'LEAD ID', 'leadId', 'lead_id', 'ID Lead', 'ID do Lead', 'ID']) || '').replace(/\.0$/, '').trim(),
     name: pick(row, ['Nome', 'NOME', 'name']) || '',
-    seller: String(pick(row, ['RESPONSAVEL', 'Responsavel', 'Responsável', 'seller']) || 'Sem responsavel').trim() || 'Sem responsavel',
+    seller: String(pick(row, ['RESPONSAVEL', 'Responsavel', 'Responsável', 'seller', 'Vendedor', 'Vendedora']) || 'Sem responsavel').trim() || 'Sem responsavel',
     origin: origin(row),
     leadTag: bool(pick(row, ['LEAD', 'leadTag'])),
     mql: bool(pick(row, ['MQL', 'mql'])),
     sql: bool(pick(row, ['SQL', 'sql'])),
     opportunity: bool(pick(row, ['OPORTUNIDADE', 'Oportunidade', 'opportunity'])),
-    purchase: bool(pick(row, ['COMPRA', 'Compra', 'purchase'])),
-    lostFlag: bool(pick(row, ['LEAD PERDIDO', 'Lead Perdido', 'lostFlag'])),
-    lossReason: String(pick(row, ['MOTIVO DE PERDA', 'Motivo de perda', 'lossReason']) || '').trim(),
-    value: money(pick(row, ['Valor', 'VALOR', 'value'])),
+    purchase: bool(pick(row, ['COMPRA', 'Compra', 'purchase', 'Venda'])),
+    lostFlag: bool(pick(row, ['LEAD PERDIDO', 'Lead Perdido', 'lostFlag', 'Perdido'])),
+    lossReason: String(pick(row, ['MOTIVO DE PERDA', 'Motivo de perda', 'lossReason', 'Motivo']) || '').trim(),
+    value: money(pick(row, ['Valor', 'VALOR', 'value', 'Receita'])),
     metaAds: bool(pick(row, ['META ADS', 'Meta Ads', 'metaAds'])),
     googleAds: bool(pick(row, ['GOOGLE ADS', 'Google Ads', 'googleAds'])),
     tags: pick(row, ['TAGS', 'Tags', 'tags']) || ''
@@ -134,7 +152,8 @@ export default async function handler(req, res) {
     const response = await fetch(csvUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
     const text = await response.text();
     if (!response.ok) throw new Error(`CSV HTTP ${response.status}: ${text.slice(0, 160)}`);
-    const records = csvToRows(text).map(normalize).filter((r) => r.leadId && r.date);
+    const rawRows = csvToRows(text);
+    const records = rawRows.map(normalize).filter((r) => r.leadId && r.date);
     const dates = records.map((r) => r.date).sort();
     res.status(200).json({
       ok: true,
@@ -142,7 +161,9 @@ export default async function handler(req, res) {
       spreadsheetId,
       gid,
       updatedAt: new Date().toISOString(),
+      rawCount: rawRows.length,
       count: records.length,
+      ignoredRows: Math.max(0, rawRows.length - records.length),
       period: { start: dates[0] || '', end: dates[dates.length - 1] || '' },
       records
     });
