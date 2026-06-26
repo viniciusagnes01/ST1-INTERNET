@@ -134,6 +134,32 @@ function safeParam(value) {
   return /^[A-Za-z0-9_-]+$/.test(text) ? text : '';
 }
 
+function csvUrl(spreadsheetId, gid) {
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&gid=${gid}&_=${Date.now()}`;
+}
+
+async function discoverGids(spreadsheetId, firstGid) {
+  const ids = new Set([firstGid, DEFAULT_GID]);
+  try {
+    const response = await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?usp=sharing`, { cache: 'no-store' });
+    const html = await response.text();
+    const patterns = [/gid[=:\\"]+(\d{3,})/g, /sheetId[\"']?\s*[:=]\s*(\d{3,})/g, /\[\"[^\"]*\",(\d{3,}),/g];
+    patterns.forEach((pattern) => {
+      for (const match of html.matchAll(pattern)) ids.add(match[1]);
+    });
+  } catch (error) {}
+  return Array.from(ids).filter(Boolean).slice(0, 40);
+}
+
+async function readGid(spreadsheetId, gid) {
+  const response = await fetch(csvUrl(spreadsheetId, gid), { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`CSV HTTP ${response.status}: ${text.slice(0, 120)}`);
+  const rawRows = csvToRows(text);
+  const records = rawRows.map(normalize).filter((row) => row.leadId && row.date);
+  return { gid, rawRows: rawRows.length, records };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -147,24 +173,37 @@ export default async function handler(req, res) {
     const query = req.query || {};
     const spreadsheetId = safeParam(query.spreadsheetId) || process.env.GROWTHPACK_SPREADSHEET_ID || DEFAULT_SPREADSHEET_ID;
     const gid = safeParam(query.gid) || process.env.GROWTHPACK_BASE_CRM_GID || DEFAULT_GID;
-    const forcedCsvUrl = typeof query.csvUrl === 'string' && query.csvUrl.startsWith('https://docs.google.com/') ? query.csvUrl : '';
-    const csvUrl = forcedCsvUrl || process.env.GROWTHPACK_CSV_URL || `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&gid=${gid}&_=${Date.now()}`;
-    const response = await fetch(csvUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
-    const text = await response.text();
-    if (!response.ok) throw new Error(`CSV HTTP ${response.status}: ${text.slice(0, 160)}`);
-    const rawRows = csvToRows(text);
-    const records = rawRows.map(normalize).filter((r) => r.leadId && r.date);
-    const dates = records.map((r) => r.date).sort();
+    const gids = await discoverGids(spreadsheetId, gid);
+    const byLead = new Map();
+    const sources = [];
+    const errors = [];
+
+    for (const currentGid of gids) {
+      try {
+        const result = await readGid(spreadsheetId, currentGid);
+        sources.push({ gid: currentGid, rawRows: result.rawRows, records: result.records.length });
+        result.records.forEach((record) => {
+          const key = record.leadId || `${record.date}-${record.name}`;
+          if (!byLead.has(key)) byLead.set(key, record);
+        });
+        if (byLead.size >= 9300) break;
+      } catch (error) {
+        errors.push({ gid: currentGid, error: error.message });
+      }
+    }
+
+    const records = Array.from(byLead.values()).sort((a, b) => a.date.localeCompare(b.date) || a.leadId.localeCompare(b.leadId));
+    const dates = records.map((row) => row.date).sort();
     res.status(200).json({
-      ok: true,
-      source: 'growthpack-csv-live',
+      ok: records.length > 0,
+      source: 'growthpack-csv-live-full-scan',
       spreadsheetId,
       gid,
       updatedAt: new Date().toISOString(),
-      rawCount: rawRows.length,
       count: records.length,
-      ignoredRows: Math.max(0, rawRows.length - records.length),
       period: { start: dates[0] || '', end: dates[dates.length - 1] || '' },
+      sources,
+      errors: errors.slice(0, 8),
       records
     });
   } catch (error) {
