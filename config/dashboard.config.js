@@ -7,13 +7,13 @@ window.DASHBOARD_CONFIG = {
     end: '2026-06-18'
   },
   growthPack: {
-    spreadsheetId: '1BurqRDqYbWq8dPVxXiKjWH6WmfBNoe39AymwJM8LpFA',
+    spreadsheetId: '1evfxP6nTyRn98dSMF6YedOP0pQn_T8rAUbKlIjhot50',
     baseCrmGid: '1699545222',
     // Runtime source order: localStorage override -> Apps Script proxy -> bundled fallback.
-    // Disabled by default because private Google Sheets/public CSV can block rendering on Vercel.
-    useGoogleCsv: false,
+    // Enabled: the sheet must be shared as "Anyone with the link can view" for this CSV export to work.
+    useGoogleCsv: true,
     // Paste a public CSV or Apps Script endpoint inside the dashboard to activate dynamic sync.
-    csvUrl: 'https://docs.google.com/spreadsheets/d/1BurqRDqYbWq8dPVxXiKjWH6WmfBNoe39AymwJM8LpFA/gviz/tq?tqx=out:csv&gid=1699545222',
+    csvUrl: 'https://docs.google.com/spreadsheets/d/1evfxP6nTyRn98dSMF6YedOP0pQn_T8rAUbKlIjhot50/gviz/tq?tqx=out:csv&gid=1699545222',
     // Use this when the sheet is private. See docs/integrations.md.
     appsScriptUrl: '',
     fallbackJson: './data/growthpack-base-crm.json',
